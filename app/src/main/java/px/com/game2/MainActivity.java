@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
         //开启线程
         director.attachInView(surfaceView);
         director.setDisplayFPS(true);
-        director.setScreenSize(1920,1080);
+        director.setScreenSize(900,680);
         director.setDeviceOrientation(CCDirector.kCCDeviceOrientationLandscapeLeft);
         CCScene scene=CCScene.node();
         scene.addChild(new GameLayer());
