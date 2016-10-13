@@ -65,6 +65,11 @@ public class PokerUtils {
         return plist;
     }
 
+    /**
+     * 排序从大到小
+     * @param pokers
+     * @return
+     */
     public Poker[] sortingBig(Poker[] pokers)
     {
         for (int i=0;i<pokers.length;i++)
@@ -80,5 +85,41 @@ public class PokerUtils {
            }
         }
         return  pokers;
+    }
+
+    /**
+     * 斗地主出牌规则
+     * @param list
+     * @return
+     */
+    public boolean pokerRules(List<Poker> list)
+    {   boolean isflag=false;
+        if (list.size()==2)
+        {
+            if (list.get(0).getPokerValue()!=list.get(1).getPokerValue())
+            {
+                isflag=false;
+            }
+            else
+            {
+                isflag=true;
+            }
+        }
+        else if (list.size()==3)
+        {
+            if (list.get(0).getPokerValue()==list.get(1).getPokerValue()&&list.get(0).getPokerValue()==list.get(2).getPokerValue())
+            {
+                isflag=true;
+            }
+            else
+            {
+                isflag=false;
+            }
+        }
+        else if (list.size()==4)
+        {
+
+        }
+        return  isflag;
     }
 }
