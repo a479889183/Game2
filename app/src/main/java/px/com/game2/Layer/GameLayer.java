@@ -388,7 +388,7 @@ public class GameLayer extends BaseLayer {
             moveSpriteUp.clear();
             Collections.addAll(moveSpriteUp, pokers);
 
-            if (!pUtils.pokerRules(moveSpriteUp)) {   //不符合出牌规则 把牌往下移
+            if (!pUtils.pokerRulesB(moveSpriteUp)) {   //不符合出牌规则 把牌往下移
 
                 for (int i = 0; i < moveSpriteUp.size(); i++) {
                     CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, -30));

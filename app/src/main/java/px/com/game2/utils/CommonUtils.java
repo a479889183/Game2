@@ -68,7 +68,7 @@ public class CommonUtils {
             }  else {
                 pk.setPokerValue(i % 13);
             }
-            Log.e("----", String.format(foramt, i) + "=====" + "i%13====" + i % 13 + "值===" + pk.getPokerValue());
+           // Log.e("----", String.format(foramt, i) + "=====" + "i%13====" + i % 13 + "值===" + pk.getPokerValue());
             pk.setNum(1);
             list[i - 1] = pk;
         }
@@ -106,7 +106,7 @@ public class CommonUtils {
             CCSprite sprite = CCSprite.sprite(String.format(foramt, i));
             pk.setPolerSprite(sprite);
             pk.setNum(j);
-            Log.e("----", String.format(foramt, i) + "=====" + "i%11====" + i % 11 + "--值===" + pk.getPokerValue()+"--type--"+pk.getPokertype()+"--"+pk.getNum());
+            //Log.e("----", String.format(foramt, i) + "=====" + "i%11====" + i % 11 + "--值===" + pk.getPokerValue()+"--type--"+pk.getPokertype()+"--"+pk.getNum());
             poker[i - 1] = pk;
         }
         return poker;

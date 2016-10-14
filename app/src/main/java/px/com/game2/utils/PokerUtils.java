@@ -97,6 +97,11 @@ public class PokerUtils {
         return pokers;
     }
 
+    /**
+     * 出牌规则
+     * @param list
+     * @return
+     */
     public boolean pokerRulesB(List<Poker> list) {
         if (list.size() == 1) return true;
         if (list.size() == 2) {
@@ -111,10 +116,14 @@ public class PokerUtils {
         if (list.size() == 3) return false;
         if (list.size() == 4) {
             HashSet set = new HashSet();
+            HashSet set1=new HashSet();
             for (Poker poker : list) {
                 set.add(poker.getPokerValue());
+                set1.add(poker.getPokertype());
+                Log.e("----",poker.getPokertype()+"-----------------------------------");
             }
             if (set.size() == 2) {
+                if (set1.size()>1)return false;
                 List<Integer> list1 = new ArrayList<>();
                 list1.addAll(set);
                 if ((list1.get(0) == list1.get(1) + 1) || (list1.get(0) == list1.get(1) - 1)) {
@@ -155,6 +164,7 @@ public class PokerUtils {
             }
         } else if (list.size() == 4) {
             HashSet hashSet = new HashSet();
+            HashSet set;
             for (Poker poker : list) {
                 hashSet.add(poker.getPokerValue());
             }
