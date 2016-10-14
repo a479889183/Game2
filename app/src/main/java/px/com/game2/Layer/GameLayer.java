@@ -2,6 +2,7 @@ package px.com.game2.Layer;
 
 import android.util.Log;
 import android.view.MotionEvent;
+
 import org.cocos2d.actions.instant.CCCallFunc;
 import org.cocos2d.actions.interval.CCDelayTime;
 import org.cocos2d.actions.interval.CCMoveBy;
@@ -11,13 +12,16 @@ import org.cocos2d.nodes.CCLabel;
 import org.cocos2d.nodes.CCSprite;
 import org.cocos2d.types.CGPoint;
 import org.cocos2d.types.CGRect;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+
 import px.com.game2.bean.Poker;
 import px.com.game2.utils.CommonUtils;
 import px.com.game2.utils.PokerUtils;
+
 
 /**
  * Created by admin on 2016/10/11.
@@ -34,7 +38,7 @@ public class GameLayer extends BaseLayer {
      */
     public CGPoint upPoint;
     /**
-     * 移动点的集合
+     * 存储选中的牌
      */
     public List<Poker> moveSprite = new ArrayList<>();
 
@@ -42,10 +46,11 @@ public class GameLayer extends BaseLayer {
      * 在出牌集合
      */
     public List<Poker> moveSpriteUp = new ArrayList<>();
+
     /**
-     * 出牌状态多选的牌 变为不出牌状态
+     * 底牌
      */
-    public List<Poker> moveSpriteTO=new ArrayList<>();
+    public List<Poker> remainPoker = new ArrayList<>();
 
     int i = 0;
     /**
@@ -56,7 +61,17 @@ public class GameLayer extends BaseLayer {
     /**
      * 自己的牌的精灵
      */
-    public List<Poker> mList=new ArrayList<>();
+    public List<Poker> mList = new ArrayList<>();
+
+    /**
+     * 第二个人的牌
+     */
+    public List<Poker> secondList = new ArrayList<>();
+
+    /**
+     * 第三个人的牌
+     */
+    public List<Poker> thirdList = new ArrayList<>();
 
     CCLabel label, playLable;
 
@@ -68,7 +83,7 @@ public class GameLayer extends BaseLayer {
     /**
      * 速度
      */
-    float speed=0.01F;
+    float speed = 0.01F;
     /**
      * 每次扑克牌加的宽度
      */
@@ -80,10 +95,7 @@ public class GameLayer extends BaseLayer {
     /**
      * 存储上一次出的牌集合
      */
-    HashSet<Poker> pokerSet=new HashSet<>();
-
-
-    public boolean isMoveUp;
+    HashSet<Poker> pokerSet = new HashSet<>();
 
 
     public GameLayer() {
@@ -156,18 +168,34 @@ public class GameLayer extends BaseLayer {
      * 添加poker
      */
     public void addPoker() {
-        list = CommonUtils.getCard();
+
+        //54张牌
+        /*list = CommonUtils.getCard();
         list = pUtils.shufflecard(list);
-        List<Poker[]> dealcard = pUtils.dealcard(3, list, 17);
+        List<Poker[]> dealcard = pUtils.dealcard(3, list, 17);*/
+        //92张牌
+        list = CommonUtils.getCardB();
+        list = pUtils.shufflecard(list);
+        List<Poker[]> dealcard = pUtils.dealcard(4, list, 21);
+        //底牌
+        for (int i = list.length-1; i > list.length - 8; i--) {
+            remainPoker.add(list[i]);
+        }
+        Log.e("---size","++++++++++"+remainPoker.size());
         mList.clear();
-        Collections.addAll(mList,pUtils.sortingBig(dealcard.get(0)));
+        Collections.addAll(mList, pUtils.sortingBig(dealcard.get(0)));
+
+        Collections.addAll(secondList, pUtils.sortingBig(dealcard.get(1)));
+
+        Collections.addAll(thirdList, pUtils.sortingBig(dealcard.get(2)));
+
         for (int i = 0; i < mList.size(); i++) {
-            CCSprite sp =  mList.get(i).getPolerSprite();
+            CCSprite sp = mList.get(i).getPolerSprite();
 
             sp.setPosition(winSize.width + 100, winSize.height / 2);
             sp.setAnchorPoint(0, 0);
             this.addChild(sp);
-            Log.e("listsize", "数值==" +  mList.get(i).getPokerValue() + "--type=" + list[i].getPokertype());
+            Log.e("listsize", "数值==" + mList.get(i).getPokerValue() + "--type=" + list[i].getPokertype() + "listsize==" + mList.size() + "--dijifu==" + mList.get(i).getNum());
         }
     }
 
@@ -208,15 +236,13 @@ public class GameLayer extends BaseLayer {
         initdeal();
     }
 
-    public void  initdeal()
-    {
-        if (moveSpriteUp==null)
-        {
-            moveSpriteUp=new ArrayList<>();
+    public void initdeal() {
+        if (moveSpriteUp == null) {
+            moveSpriteUp = new ArrayList<>();
         }
-        i=0;
+        i = 0;
         CCDelayTime ccdelay = CCDelayTime.action(2);
-        if (mList.size()==0) return;
+        if (mList.size() == 0) return;
         CCSprite sprite = mList.get(i).getPolerSprite();
         initPokerPoint(sprite);
         CCMoveTo ccMoveBy = CCMoveTo.action(speed, CGPoint.ccp(initX, 30));
@@ -229,7 +255,10 @@ public class GameLayer extends BaseLayer {
      */
     public void lodeDeal() {
         CCDelayTime ccdelay = CCDelayTime.action(speed);
-        if (mList.size()<=i){ i=0; return;}
+        if (mList.size() <= i) {
+            i = 0;
+            return;
+        }
         CCSprite sprite = mList.get(i).polerSprite;
 
         CCMoveTo ccMoveBy = CCMoveTo.action(speed, CGPoint.ccp(initX + addX * i, 30));
@@ -241,27 +270,22 @@ public class GameLayer extends BaseLayer {
 
     /**
      * 向上移动
-     *
-     *
      */
     public void moveUpward(Poker poker) {
-        if (poker.getPolerSprite().getBoundingBox().origin.y < 31) {
+        if (poker.getPolerSprite().getBoundingBox().origin.y == 30) {
             CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, 30));
             CCSequence sequence = CCSequence.actions(ccMoveTo, CCCallFunc.action(this, "unLock"));
             poker.getPolerSprite().runAction(sequence);
             moveSpriteUp.add(poker);
-            Log.e("moved的大小","---mavesize=="+moveSpriteUp.size()+"----"+poker.getPokerValue()+"--type"+poker.getPokertype());
         }
 
     }
 
     /**
      * 向下移动
-     *
-     *
      */
     public void moveDown(Poker poker) {
-        if (poker.getPolerSprite().getBoundingBox().origin.y > 31) {
+        if (poker.getPolerSprite().getBoundingBox().origin.y == 60) {
             CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, -30));
             CCSequence sequence = CCSequence.actions(ccMoveTo, CCCallFunc.action(this, "unLock"));
             poker.getPolerSprite().runAction(sequence);
@@ -275,10 +299,10 @@ public class GameLayer extends BaseLayer {
      * @param point
      */
     public void onclik(CGPoint point) {
-       if (!isLock) {
+        if (!isLock) {
             for (int i = mList.size() - 1; i >= 0; i--) {
 
-                CGRect boundingBox =mList.get(i).getPolerSprite().getBoundingBox();
+                CGRect boundingBox = mList.get(i).getPolerSprite().getBoundingBox();
                 if (CGRect.containsPoint(boundingBox, point)) {
                     isLock = true;
                     if (boundingBox.origin.y > 31) {
@@ -313,36 +337,24 @@ public class GameLayer extends BaseLayer {
      * 移动的扑克牌
      */
     public void getMoveSprite(CGPoint point) {
-        if (isMoveUp) {
-           for (Poker sprite : moveSprite) {
-                if (isExist(point, sprite.getPolerSprite().getBoundingBox())) {
-                    moveSpriteTO.add(sprite);
-                }
-            }
 
-        } else {
-            for (Poker pk : mList) {
-                if (isExist(point, pk.getPolerSprite().getBoundingBox())) {
-                    moveSprite.add(pk);
-                }
+        for (Poker sprite : mList) {
+            if (isExist(point, sprite.getPolerSprite().getBoundingBox())) {
+                moveSprite.add(sprite);
             }
         }
-
     }
 
     /**
      * 清除上次的牌
      */
-    public void removeLastPoker()
-    {
-        if (pokerSet!=null&&pokerSet.size()>0)
-        {
-            for(Poker pk:pokerSet)
-            {
-                removePoker(pk.getPolerSprite()) ;
+    public void removeLastPoker() {
+        if (pokerSet != null && pokerSet.size() > 0) {
+            for (Poker pk : pokerSet) {
+                removePoker(pk.getPolerSprite());
             }
-            pokerSet=null;
-            pokerSet=new HashSet<>();
+            pokerSet = null;
+            pokerSet = new HashSet<>();
         }
     }
 
@@ -351,108 +363,111 @@ public class GameLayer extends BaseLayer {
      */
     public void exitPoker() {
         if (moveSpriteUp != null || moveSpriteUp.size() > 0) {
-            Log.e("removeLastPoker22","removeLastPoker=="+moveSpriteUp.size());
 
-            HashSet<Poker> pokset=new HashSet<>(moveSpriteUp);
+            HashSet<Poker> pokset = new HashSet<>(moveSpriteUp);
             moveSpriteUp.clear();
             moveSpriteUp.addAll(pokset);
 
-            Log.e("removeLastPoker","removeLastPoker=="+moveSpriteUp.size());
+
             int length = moveSpriteUp.size();
-            int width = (int)  moveSpriteUp.get(0).getPolerSprite().getBoundingBox().size.getWidth();
+            int width = (int) moveSpriteUp.get(0).getPolerSprite().getBoundingBox().size.getWidth();
             int sSize = 0;
-            if (length  / 2 != 0) {
-                sSize = (length  / 2) + 1;
+            if (length / 2 != 0) {
+                sSize = (length / 2) + 1;
             } else {
-                sSize = length  / 2;
+                sSize = length / 2;
             }
-            exitX = width + width + ((width / 3) * (length  - 2));
+            exitX = width + width + ((width / 3) * (length - 2));
             exitX = (winSize.width / 2) - exitX / 2;
 
 
             //先移除扑克牌
 
             Poker[] pokers = moveSpriteUp.toArray(new Poker[moveSpriteUp.size()]);
-            pokers=pUtils.sortingBig(pokers);
+            pokers = pUtils.sortingBig(pokers);
             moveSpriteUp.clear();
-            Collections.addAll(moveSpriteUp,pokers);
+            Collections.addAll(moveSpriteUp, pokers);
 
-            if(!pUtils.pokerRules(moveSpriteUp))
-            {
+            if (!pUtils.pokerRules(moveSpriteUp)) {   //不符合出牌规则 把牌往下移
+
+                for (int i = 0; i < moveSpriteUp.size(); i++) {
+                    CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, -30));
+                    moveSpriteUp.get(i).getPolerSprite().runAction(ccMoveTo);
+                }
+                moveSpriteUp.clear();
                 return;
             }
             removeLastPoker();
-            for (Poker pk:moveSpriteUp)
-            {
+            for (Poker pk : moveSpriteUp) {
                 removePoker(pk.getPolerSprite());
                 mList.remove((pk));
             }
-            i=0;
+            i = 0;
             pokerSet.add(moveSpriteUp.get(i));
-            exitMoveAnimation(exitX,winSize.height/2,moveSpriteUp.get(i).getPolerSprite());
-            speed=0.001F;
-            isMoveUp = false;
+            exitMoveAnimation(exitX, winSize.height / 2, moveSpriteUp.get(i).getPolerSprite());
+            speed = 0.001F;
             initdeal();
         }
     }
 
     /**
      * 移除扑克牌
+     *
      * @param sprite
      */
-    public void removePoker(CCSprite sprite)
-    {
-        this.removeChild(sprite,true);
+    public void removePoker(CCSprite sprite) {
+        this.removeChild(sprite, true);
     }
 
     /**
      * 初始化出牌动作
+     *
      * @param x
      * @param y
      * @param sprite
      */
-   public void exitMoveAnimation(float x,float y,CCSprite sprite)
-   {
-       sprite.setPosition(x,y);
-       sprite.setAnchorPoint(0,0);
-       CCCallFunc call=CCCallFunc.action(this,"addChildPoker");
-       this.addChild(sprite);
-       sprite.runAction(call);
+    public void exitMoveAnimation(float x, float y, CCSprite sprite) {
+        sprite.setPosition(x, y);
+        sprite.setAnchorPoint(0, 0);
+        CCCallFunc call = CCCallFunc.action(this, "addChildPoker");
+        this.addChild(sprite);
+        sprite.runAction(call);
 
-   }
+    }
 
     /**
      * 把出的牌放到屏幕中间
      */
-   public void addChildPoker()
-   {   i++;
-       if (i>=moveSpriteUp.size())
-       {
-           moveSpriteUp.clear();
-           moveSpriteUp=null;
-           return;
-       }
-       CCSprite sprite=moveSpriteUp.get(i).getPolerSprite();
+    public void addChildPoker() {
+        i++;
+        if (i >= moveSpriteUp.size()) {
+            moveSpriteUp.clear();
+            moveSpriteUp = null;
+            return;
+        }
+        CCSprite sprite = moveSpriteUp.get(i).getPolerSprite();
 
-       sprite.setPosition(exitX+(addX)*i,winSize.getHeight()/2);
+        sprite.setPosition(exitX + (addX) * i, winSize.getHeight() / 2);
 
-       this.addChild(sprite);
-       pokerSet.add(moveSpriteUp.get(i));
-       addChildPoker();
-   }
+        this.addChild(sprite);
+        pokerSet.add(moveSpriteUp.get(i));
+        addChildPoker();
+    }
 
     /**
      * 多选
      */
     public void MoveSpriteTo(List<Poker> Sprite) {
-        for (Poker sprite : Sprite) {
-            if (isMoveUp) {
-                moveDown(sprite);
 
-            } else {
-                moveUpward(sprite);
+        for (int i = 0; i < Sprite.size(); i++) {
+
+            if (Sprite.get(i).getPolerSprite().getBoundingBox().origin.y == 30) {
+                moveUpward(Sprite.get(i));
+
+            } else if (Sprite.get(i).getPolerSprite().getBoundingBox().origin.y == 60) {
+                moveDown(Sprite.get(i));
+
             }
-
         }
     }
 
@@ -468,16 +483,12 @@ public class GameLayer extends BaseLayer {
         if (CGPoint.equalToPoint(downPoint, upPoint)) {
             onclik(upPoint);
         } else {
-            if (!isMoveUp) {
-                MoveSpriteTo(moveSprite);
-                isMoveUp = true;
-            } else {
-                MoveSpriteTo(moveSpriteTO);
-                isMoveUp = false;
-                moveSprite.clear();
-                moveSpriteTO.clear();
-            }
-
+            //处理滑动时选中的牌
+            HashSet set = new HashSet(moveSprite);
+            moveSprite.clear();
+            moveSprite.addAll(set);
+            MoveSpriteTo(moveSprite);
+            moveSprite.clear();
         }
         return super.ccTouchesEnded(event);
     }
@@ -491,7 +502,7 @@ public class GameLayer extends BaseLayer {
     @Override
     public boolean ccTouchesMoved(MotionEvent event) {
         CGPoint point = this.convertTouchToNodeSpace(event);
-
+        //得到滑动时选中的扑克牌
         getMoveSprite(point);
         return super.ccTouchesMoved(event);
     }

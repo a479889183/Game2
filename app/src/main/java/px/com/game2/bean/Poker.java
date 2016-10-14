@@ -50,9 +50,20 @@ public class Poker {
      */
     public int pokertype;
 
+    /**
+     * 是第几副牌
+     */
+    public int num=1;
     public void  Poker()
     {
 
+    }
+    public int getNum() {
+        return num;
+    }
+
+    public void setNum(int num) {
+        this.num = num;
     }
 
     public int getPokerValue() {
