@@ -1,18 +1,20 @@
 package px.com.game2.utils;
 
+
+
 import android.util.Log;
 
 import org.cocos2d.nodes.CCSprite;
 
 import java.util.ArrayList;
-import java.util.Collection;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
 import px.com.game2.bean.Poker;
 
-import static android.R.id.list;
+
 
 
 /**
@@ -96,17 +98,17 @@ public class CommonUtils {
             }
             else
             {
-                pk.setPokertype(i/11);
+                pk.setPokertype((i/11)+1);
                 pk.setPokerValue(i%11);
                 if (i%11==0)
-                {
+                {   pk.setPokertype((i/11));
                     pk.setPokerValue(11);
                 }
             }
             CCSprite sprite = CCSprite.sprite(String.format(foramt, i));
             pk.setPolerSprite(sprite);
             pk.setNum(j);
-            //Log.e("----", String.format(foramt, i) + "=====" + "i%11====" + i % 11 + "--值===" + pk.getPokerValue()+"--type--"+pk.getPokertype()+"--"+pk.getNum());
+            Log.e("----", String.format(foramt, i) + "=====" + "i%11====" + i % 11 + "--值===" + pk.getPokerValue()+"--type--"+pk.getPokertype()+"--"+pk.getNum());
             poker[i - 1] = pk;
         }
         return poker;
@@ -124,42 +126,6 @@ public class CommonUtils {
         Collections.addAll(pokerList,pokers);
 
         Collections.addAll(pokerList,poke);
-       /* int j=0;
-        for (int i=0;i<pokerList.size();i++)
-        {
-
-            if ((i+j)/54==0)
-           {
-               pokerList.get(i).setNum(1);
-           }
-             if((i+j)/54==1)
-           {
-               pokerList.get(i).setNum(2);
-           }
-            if (pokerList.get(i).getPokerValue()==3)
-            {
-                pokerList.remove(i);
-                j++;
-            }
-            if (pokerList.get(i).getPokerValue()==4)
-            {
-                pokerList.remove(i);
-                j++;
-            }
-             if (pokerList.get(i).getPokerValue()==17)
-            {
-                pokerList.get(i).setPokerValue(20);
-            }
-             if ((pokerList.get(i).getPokerValue()==16))
-            {
-                pokerList.get(i).setPokerValue(19);
-            }
-             if ((pokerList.get(i).getPokerValue()==10))
-            {
-                pokerList.get(i).setPokerValue(18);
-            }
-
-        }*/
         Poker[] pokers1 = pokerList.toArray(new Poker[pokerList.size()]);
         return pokers1;
     }

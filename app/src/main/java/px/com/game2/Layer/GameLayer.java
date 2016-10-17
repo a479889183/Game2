@@ -21,6 +21,9 @@ import java.util.List;
 import px.com.game2.bean.Poker;
 import px.com.game2.utils.CommonUtils;
 import px.com.game2.utils.PokerUtils;
+import px.com.game2.utils.RobotUtil;
+
+import static android.R.attr.label;
 
 
 /**
@@ -62,6 +65,10 @@ public class GameLayer extends BaseLayer {
      * 自己的牌的精灵
      */
     public List<Poker> mList = new ArrayList<>();
+    /**
+     * 第一个电脑
+     */
+    public   FristReobotLayer fristReobot;
 
     /**
      * 第二个人的牌
@@ -72,8 +79,19 @@ public class GameLayer extends BaseLayer {
      * 第三个人的牌
      */
     public List<Poker> thirdList = new ArrayList<>();
+    /**
+     * 第4个人的牌
+     */
+    public List<Poker> fouthList=new ArrayList<>();
 
-    CCLabel label, playLable;
+    /**
+     * 对手出的牌
+     */
+    public List<Poker> otherList=new ArrayList<>();
+
+    public RobotUtil rbUtil;
+
+    CCLabel label, playLable,showToast,roblable,buriedLable;
 
     PokerUtils pUtils;
     /**
@@ -105,6 +123,9 @@ public class GameLayer extends BaseLayer {
 
     private void init() {
         pUtils = new PokerUtils();
+        rbUtil=new RobotUtil();
+        fristReobot=new FristReobotLayer();
+
         lodeBg();
         deal();
         lodePerson();
@@ -130,13 +151,49 @@ public class GameLayer extends BaseLayer {
         label.setColor(ccc3(50, 0, 255));
         label.setPosition(winSize.width / 2, winSize.height / 2);
         this.addChild(label);
+
+        showToast=CCLabel.labelWithString("你的牌不符合规则", "hkbd.ttf", 24);
+        showToast.setColor(ccc3(100, 0, 255));
+        showToast.setPosition(winSize.width / 2, winSize.height / 2+100);
+        showToast.setVisible(false);
+        this.addChild(showToast);
+
+
+        roblable=CCLabel.labelWithString("抢庄", "hkbd.ttf", 24);
+        roblable.setColor(ccc3(50, 60, 255));
+        roblable.setPosition(winSize.width-100,60);
+        this.addChild(roblable);
+
+        buriedLable=CCLabel.labelWithString("埋牌", "hkbd.ttf", 24);
+        buriedLable.setColor(ccc3(255, 60, 129));
+        buriedLable.setPosition(winSize.width/2,200);
+        this.addChild(buriedLable);
     }
 
+    /**
+     * 显示提示信息
+     * @param str
+     */
+    public void showToast(String str)
+    {
+      label.setString(str);
+      label.setVisible(true);
+      CCDelayTime delayTime=CCDelayTime.action(2);
+      CCSequence sequence=CCSequence.actions(delayTime,CCCallFunc.action(this,"hindToast"));
+      label.runAction(sequence);
+    }
+
+    public void hindToast()
+    {
+        label.setVisible(false);
+    }
     private void lodePerson() {
-        CCSprite frist = CCSprite.sprite("head/0.png");
+       /* CCSprite frist = CCSprite.sprite("head/0.png");
         frist.setPosition(20, 40);
         frist.setAnchorPoint(0, 0);
-        this.addChild(frist);
+        this.addChild(frist);*/
+
+        this.addChild(fristReobot);
 
         CCSprite second = CCSprite.sprite("head/4.png");
         second.setPosition(40, winSize.height / 2);
@@ -177,17 +234,27 @@ public class GameLayer extends BaseLayer {
         list = CommonUtils.getCardB();
         list = pUtils.shufflecard(list);
         List<Poker[]> dealcard = pUtils.dealcard(4, list, 21);
+        remainPoker.clear();
         //底牌
-        for (int i = list.length-1; i > list.length - 8; i--) {
+        for (int i = list.length-1; i > list.length - 9; i--) {
             remainPoker.add(list[i]);
         }
-        Log.e("---size","++++++++++"+remainPoker.size());
         mList.clear();
         Collections.addAll(mList, pUtils.sortingBig(dealcard.get(0)));
 
+        secondList.clear();
+
         Collections.addAll(secondList, pUtils.sortingBig(dealcard.get(1)));
 
+        fristReobot.setList(secondList);
+
+        thirdList.clear();
+
         Collections.addAll(thirdList, pUtils.sortingBig(dealcard.get(2)));
+
+        fouthList.clear();
+
+        Collections.addAll(fouthList, pUtils.sortingBig(dealcard.get(3)));
 
         for (int i = 0; i < mList.size(); i++) {
             CCSprite sp = mList.get(i).getPolerSprite();
@@ -195,7 +262,7 @@ public class GameLayer extends BaseLayer {
             sp.setPosition(winSize.width + 100, winSize.height / 2);
             sp.setAnchorPoint(0, 0);
             this.addChild(sp);
-            Log.e("listsize", "数值==" + mList.get(i).getPokerValue() + "--type=" + list[i].getPokertype() + "listsize==" + mList.size() + "--dijifu==" + mList.get(i).getNum());
+           // Log.e("listsize", "数值==" + mList.get(i).getPokerValue() + "--type=" + list[i].getPokertype() + "listsize==" + mList.size() + "--dijifu==" + mList.get(i).getNum());
         }
     }
 
@@ -203,8 +270,9 @@ public class GameLayer extends BaseLayer {
      * 移除poker
      */
     public void removePoker() {
-        for (int i = 0; i < list.length; i++) {
-            this.removeChild(list[i].getPolerSprite(), true);
+        otherList.clear();
+        for (int i = 0; i < mList.size(); i++) {
+            this.removeChild(mList.get(i).getPolerSprite(), true);
         }
         i = 0;
         deal();
@@ -236,6 +304,9 @@ public class GameLayer extends BaseLayer {
         initdeal();
     }
 
+    /**
+     * 重新排序
+     */
     public void initdeal() {
         if (moveSpriteUp == null) {
             moveSpriteUp = new ArrayList<>();
@@ -359,15 +430,112 @@ public class GameLayer extends BaseLayer {
     }
 
     /**
-     * 出牌
+     * 埋牌
      */
-    public void exitPoker() {
-        if (moveSpriteUp != null || moveSpriteUp.size() > 0) {
+    public void buriedPoker()
+    {
+        if (moveSpriteUp!=null&&moveSpriteUp.size()==8)
+        {    HashSet<Poker> pokset = new HashSet<>(moveSpriteUp);
+            moveSpriteUp.clear();
+            moveSpriteUp.addAll(pokset);
+            remainPoker.clear();
+            //底牌=埋的牌
+            remainPoker=moveSpriteUp;
 
+            //先移除桌面上的牌
+
+            for (int i=0;i<mList.size();i++)
+            {
+                removePoker(mList.get(i).getPolerSprite());
+            }
+
+            for (Poker pk : moveSpriteUp) {
+                removePoker(pk.getPolerSprite());
+                mList.remove((pk));
+            }
+            Poker[] pokers = mList.toArray(new Poker[mList.size()]);
+            mList.clear();
+            //重新排序
+            Collections.addAll(mList, pUtils.sortingBig(pokers));
+            Log.e("埋牌",mList.size()+"================");
+            //重新加到界面上
+            for (int i = 0; i < mList.size(); i++) {
+                CCSprite sp = mList.get(i).getPolerSprite();
+
+                sp.setPosition(winSize.width + 100, winSize.height / 2);
+                sp.setAnchorPoint(0, 0);
+                this.addChild(sp);
+                // Log.e("listsize", "数值==" + mList.get(i).getPokerValue() + "--type=" + list[i].getPokertype() + "listsize==" + mList.size() + "--dijifu==" + mList.get(i).getNum());
+            }
+
+            initdeal();
+        }
+        else
+        {
+            showToast("埋的牌只能是8张");
+        }
+    }
+
+
+    /**
+     * 抢庄
+     */
+    public void robZhuang()
+    {
+        if (moveSpriteUp!=null&&moveSpriteUp.size()>0)
+        {
             HashSet<Poker> pokset = new HashSet<>(moveSpriteUp);
             moveSpriteUp.clear();
             moveSpriteUp.addAll(pokset);
 
+            if(pUtils.robZhuang(moveSpriteUp))
+            {
+                showToast("亮牌成功");
+                for (int i = 0; i < moveSpriteUp.size(); i++) {
+                    CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, -30));
+                    moveSpriteUp.get(i).getPolerSprite().runAction(ccMoveTo);
+                }
+                moveSpriteUp.clear();
+                //先清除界面上的牌
+                for (int i = 0; i < mList.size(); i++) {
+                    this.removeChild(mList.get(i).getPolerSprite(), true);
+                }
+                mList.addAll(remainPoker);
+                for (int i=0;i<mList.size();i++)
+                {
+                    CCSprite sp = mList.get(i).getPolerSprite();
+
+                    sp.setPosition(winSize.width + 100, winSize.height / 2);
+                    sp.setAnchorPoint(0, 0);
+                    this.addChild(sp);
+                }
+
+                initdeal();
+            }
+            else
+            {
+                showToast("亮牌不符合规则");
+                for (int i = 0; i < moveSpriteUp.size(); i++) {
+                    CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, -30));
+                    moveSpriteUp.get(i).getPolerSprite().runAction(ccMoveTo);
+                }
+                moveSpriteUp.clear();
+            }
+        }
+    }
+
+
+    /**
+     * 出牌
+     */
+    public void exitPoker() {
+        if (moveSpriteUp != null && moveSpriteUp.size() > 0) {
+
+            HashSet<Poker> pokset = new HashSet<>(moveSpriteUp);
+            moveSpriteUp.clear();
+            moveSpriteUp.addAll(pokset);
+            //获得对手出的牌
+            otherList=fristReobot.getShowList();
 
             int length = moveSpriteUp.size();
             int width = (int) moveSpriteUp.get(0).getPolerSprite().getBoundingBox().size.getWidth();
@@ -397,6 +565,24 @@ public class GameLayer extends BaseLayer {
                 moveSpriteUp.clear();
                 return;
             }
+            //判断是否大于桌面上的牌
+            if (otherList!=null&&otherList.size()>0)
+            {
+              boolean f =pUtils.isSize(moveSpriteUp,otherList,Poker.POKERTTYPE_W);
+                if (!f)
+                {
+                    for (int i = 0; i < moveSpriteUp.size(); i++) {
+                        CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, -30));
+                        moveSpriteUp.get(i).getPolerSprite().runAction(ccMoveTo);
+                    }
+                    moveSpriteUp.clear();
+                    return;
+                }
+            }
+
+            //第一个人出牌
+            fristReobot.outPoker(moveSpriteUp);
+
             removeLastPoker();
             for (Poker pk : moveSpriteUp) {
                 removePoker(pk.getPolerSprite());
@@ -407,6 +593,7 @@ public class GameLayer extends BaseLayer {
             exitMoveAnimation(exitX, winSize.height / 2, moveSpriteUp.get(i).getPolerSprite());
             speed = 0.001F;
             initdeal();
+
         }
     }
 
@@ -521,6 +708,14 @@ public class GameLayer extends BaseLayer {
             removePoker();
         } else if (CGRect.containsPoint(playLable.getBoundingBox(), downPoint)) {
             exitPoker();
+        }
+        else if (CGRect.containsPoint(roblable.getBoundingBox(), downPoint))
+        {
+            robZhuang();
+        }
+        else if(CGRect.containsPoint(buriedLable.getBoundingBox(), downPoint))
+        {
+            buriedPoker();
         }
         return super.ccTouchesBegan(event);
     }
