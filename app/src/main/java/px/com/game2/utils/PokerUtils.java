@@ -4,9 +4,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-
 import px.com.game2.bean.Poker;
 
 import static px.com.game2.bean.Poker.POKERTTYPE_F;
@@ -40,44 +38,42 @@ public class PokerUtils {
 
     /**
      * 发牌
+     * @param number 几副牌
+     * @param list   牌
+     * @param size 每副牌的大小
+     * @return
      */
     public List<Poker[]> dealcard(int number, Poker[] list, int size)//发牌
     {
         List<Poker[]> plist = new ArrayList<>();
-        for (int j = number; j > 0; j--) {
-            Poker[] pker = new Poker[size];
-
-            for (int i = 0; i < size; i++) {
-                pker[i] = list[i * j];
-            }
-            plist.add(pker);
+        for (int j=0;j<number;j++)
+        {   Poker [] pokers=new Poker[size];
+            plist.add(pokers);
         }
-       /*  Poker [] pker=new Poker[size];
-        Poker [] pker1=new Poker[size];
-        Poker [] pker2=new Poker[size];
-        int temp=0,temp1=0,temp2=0;
-        for(int i=0;i<size*number;i++)
+        int a=0,b=0,c=0,d=0;
+        for (int i=0;i<list.length-8;i++)
         {
-           if (i%number==0)
-           {
-               pker[temp]=list[i];
-               temp++;
-           }
-            else  if (i%number==1)
-           {
-               pker[temp1]=list[i];
-               temp1++;
-           }
-           else  if (i%number==2)
-           {
-               pker[temp2]=list[i];
-               temp2++;
-           }
-
+            if (i/size==0)
+            {
+                plist.get(i/size)[a]=list[i];
+                a++;
+            }
+            if (i/size==1)
+            {
+                plist.get(i/size)[b]=list[i];
+                b++;
+            }
+            if (i/size==2)
+            {
+                plist.get(i/size)[c]=list[i];
+                c++;
+            }
+            if (i/size==3)
+            {
+                plist.get(i/size)[d]=list[i];
+                d++;
+            }
         }
-        plist.add(pker);
-        plist.add(pker1);
-        plist.add(pker2);*/
         return plist;
     }
 
@@ -100,6 +96,199 @@ public class PokerUtils {
         return pokers;
     }
 
+    /**
+     * 排序 按主色牌排序
+     * @param pokers：牌
+     * @param type：主色的类型
+     * @return
+     */
+    public Poker[] sort(Poker[] pokers,int type)
+    {   List<Poker> mplist=new ArrayList<>();
+         //黑桃
+        List<Poker> wlist=new ArrayList<>();
+        //红桃
+        List<Poker> rlist=new ArrayList<>();
+        //梅花
+        List<Poker> mlist=new ArrayList<>();
+        //方块
+        List<Poker> flist=new ArrayList<>();
+         Poker[] pk=new Poker[pokers.length];
+
+
+          for (int i=0;i<pokers.length;i++)
+          {
+              if (pokers[i].getPokerValue()>9)
+              {
+                  mplist.add(pokers[i]);
+              }
+              if (pokers[i].getPokerValue()<10)
+              {   //黑
+                  if (pokers[i].getPokertype()==Poker.POKERTTYPE_W)
+                  {
+                      wlist.add(pokers[i]);
+                  }
+                  //红
+                  if (pokers[i].getPokertype()==Poker.POKERTTYPE_R)
+                  {
+                      rlist.add(pokers[i]);
+                  }
+                  //梅花
+                  if (pokers[i].getPokertype()==Poker.POKERTTYPE_M)
+                  {
+                      mlist.add(pokers[i]);
+                  }
+                  //方块
+                  if (pokers[i].getPokertype()==Poker.POKERTTYPE_F)
+                  {
+                      flist.add(pokers[i]);
+                  }
+              }
+          }
+        Poker[] bpoker = mplist.toArray(new Poker[mplist.size()]);
+        //先把常主从大到小排序
+        for (int i=0;i<mplist.size();i++)
+        {
+            for (int j=0;j<mplist.size();j++)
+            {
+                if (bpoker[i].getPokerValue()>bpoker[j].getPokerValue())
+                {
+                    Poker temp = bpoker[i];
+                    bpoker[i] = bpoker[j];
+                    bpoker[j] = temp;
+                }
+                else if(bpoker[i].getPokerValue()==bpoker[j].getPokerValue()&&bpoker[i].getPokertype()==type)
+                {
+                    Poker temp = bpoker[i];
+                    bpoker[i] = bpoker[j];
+                    bpoker[j] = temp;
+                }
+            }
+        }
+        //把常主加进去
+        for (int i=0;i<bpoker.length;i++)
+        {
+            pk[i]=bpoker[i];
+        }
+
+        Poker[] wpokers = sortingBig(wlist.toArray(new Poker[wlist.size()]));
+
+        Poker[] rpokers = sortingBig(rlist.toArray(new Poker[rlist.size()]));
+
+        Poker[] mpokers = sortingBig(mlist.toArray(new Poker[mlist.size()]));
+
+        Poker[] fpokers= sortingBig(flist.toArray(new Poker[flist.size()]));
+        //主色为黑色
+        if (type==Poker.POKERTTYPE_W)
+        {
+            //把主色的追加到主牌后面
+            for (int i=0;i<wpokers.length;i++)
+            {
+                pk[mplist.size()+i]=wpokers[i];
+            }
+
+            // 把红色牌追加到牌后面
+
+            for (int i=0;i<rpokers.length;i++)
+            {
+                pk[mplist.size()+wpokers.length+i]=rpokers[i];
+            }
+
+            //把梅花牌加到后面
+            for (int i=0;i<mpokers.length;i++)
+            {
+                pk[mplist.size()+wpokers.length+rpokers.length+i]=mpokers[i];
+            }
+
+            //把方块加到后面
+
+            for (int i=0;i<fpokers.length;i++)
+            {
+                pk[mplist.size()+wpokers.length+rpokers.length+mpokers.length+i]=fpokers[i];
+            }
+
+        }
+        //主色为红色
+        else if(type==Poker.POKERTTYPE_R)
+        {
+            // 把红色牌追加到牌后面
+
+            for (int i=0;i<rpokers.length;i++)
+            {
+                pk[mplist.size()+i]=rpokers[i];
+            }
+
+            //把黑色加进去
+
+            for (int i=0;i<wpokers.length;i++)
+            {
+                pk[mplist.size()+rpokers.length+i]=wpokers[i];
+            }
+
+            //把方块加进去
+            for (int i=0;i<fpokers.length;i++)
+            {
+                pk[mplist.size()+wpokers.length+rpokers.length+i]=fpokers[i];
+            }
+            //把梅花牌加到后面
+            for (int i=0;i<mpokers.length;i++)
+            {
+                pk[mplist.size()+wpokers.length+rpokers.length+fpokers.length+i]=mpokers[i];
+            }
+
+        }
+        //主色为梅花
+        else if (type==Poker.POKERTTYPE_M)
+        {
+            //把梅花牌加到后面
+            for (int i=0;i<mpokers.length;i++)
+            {
+                pk[mplist.size()+i]=mpokers[i];
+            }
+
+            // 把红色牌追加到牌后面
+
+            for (int i=0;i<rpokers.length;i++)
+            {
+                pk[mplist.size()+mpokers.length+i]=rpokers[i];
+            }
+            //把黑色加进去
+            for (int i=0;i<wpokers.length;i++)
+            {
+                pk[mplist.size()+mpokers.length+rpokers.length+i]=wpokers[i];
+            }
+            //把方块加进去
+            for (int i=0;i<fpokers.length;i++)
+            {
+                pk[mplist.size()+mpokers.length+wpokers.length+rpokers.length+i]=fpokers[i];
+            }
+        }
+        else if (type==Poker.POKERTTYPE_F)
+        {   //把方块加进去
+            for (int i=0;i<fpokers.length;i++)
+            {
+                pk[mplist.size()+i]=fpokers[i];
+            }
+
+            //把黑色加进去
+            for (int i=0;i<wpokers.length;i++)
+            {
+                pk[mplist.size()+fpokers.length+i]=wpokers[i];
+            }
+            // 把红色牌追加到牌后面
+            for (int i=0;i<rpokers.length;i++)
+            {
+                pk[mplist.size()+fpokers.length+wpokers.length+i]=rpokers[i];
+            }
+            //把梅花加进去
+            for (int i=0;i<mpokers.length;i++)
+            {
+                pk[mplist.size()+fpokers.length+wpokers.length+rpokers.length+i]=mpokers[i];
+            }
+        }
+
+        return  pk;
+    }
+
 
     /**
      * 判断大小 如果自己的牌大 返回 true
@@ -108,76 +297,91 @@ public class PokerUtils {
      */
     public boolean isSize(List<Poker> mPoker,List<Poker> uPoker,int mtype)
     {
-        if (mPoker.size()==1)
-        {
-            int type=uPoker.get(0).getPokertype();
-            int value=uPoker.get(0).getPokerValue();
-            int type1=mPoker.get(0).getPokertype();
-            int value1=mPoker.get(0).getPokerValue();
+        if (mPoker.size()!=uPoker.size())return false;
+        if (mPoker.size()==1) {
+            int type = uPoker.get(0).getPokertype();
+            int value = uPoker.get(0).getPokerValue();
 
-            if (type!=mtype&&value<10)
-            {   //同色
-                if (type==type1)
-                {
-                    if (value1>value)
-                    {
-                        return  true;
+            int type1 = mPoker.get(0).getPokertype();
+            int value1 = mPoker.get(0).getPokerValue();
+
+            //先判断出的牌是不是主色牌
+            //不是主色牌
+            if (type != mtype) {   //值不是2以上的值
+                if (value < 10) {   //先判断两个牌是不是同色
+                    if (type1 == type) {
+                        if (value1 > value) return true;
+                    }
+                    //如果自己的牌是主色的 或者是2/10大小王
+                    if (type1 == mtype || value1 > 9) {
+                        return true;
                     }
                 }
-                //主色
-                if (type1==mtype)
-                {
-                    return true;
-                }
-                // 大小王
-                if (value1>9){return  true;}
-            }
-            //出的牌是2 10 或者大小王 并且不是主色
-            else if (type!=mtype&&value>9)
-            {   //出的牌是主色
-                if (type1==mtype)
-                {
-                    if (value1>=value)return  true;
-                }
-                else if (type1!=mtype)
-                {
-                    if (value1>value)return  true;
+                //值是2以上的
+                if (value > 9) {   //主色牌
+                    if (value1 == value && type1 == mtype) return true;
+                    if (value1 > value) return true;
                 }
             }
             //出的是主色牌
-            else  if (type==mtype&&value<10)
-            {
-                if (value1>10)
-                {
-                    return true;
+            if (type == mtype) {   //值是2以下的主牌
+                if (value < 10) {   //主色牌并且要大于value
+                    if (type1 == mtype) {
+                        if (value1 > value) return true;
+                    }
+                    if (value1 > 9) {
+                        return true;
+                    }
                 }
-                else if (type1==mtype)
-                {
-                    if (value1>value)return true;
-                }
-            }
-            //出的是2 10 大小 王
-            else if (type==mtype&&value>9)
-            {
-                if (type1==mtype)
-                {
-                    if (value1>value)return  true;
-                }
-                if (value1>value)return  true;
-                //出的牌不是大小王
-                else if (value<12)
-                {
-                    if (value1>11)
-                      return  true;
-                }
-                //出的是大小王
-                else  if (value>11)
-                {
-                    if (value1>value)return true;
+                //值是2以上的
+                if (value > 9) {
+                    if (value1 > value) return true;
                 }
             }
         }
+        //对牌
+        if (mPoker.size()==2)
+        {
+            int type = uPoker.get(0).getPokertype();
+            int value = uPoker.get(0).getPokerValue();
 
+            int type1 = mPoker.get(0).getPokertype();
+            int value1 = mPoker.get(0).getPokerValue();
+
+            //先判断出的牌是不是主色牌
+            //不是主色牌
+            if (type != mtype) {   //值不是2以上的值
+                if (value < 10) {   //先判断两个牌是不是同色
+                    if (type1 == type) {
+                        if (value1 > value) return true;
+                    }
+                    //如果自己的牌是主色的 或者是2/10大小王
+                    if (type1 == mtype || value1 > 9) {
+                        return true;
+                    }
+                }
+                //值是2以上的
+                if (value > 9) {   //主色牌
+                    if (value1 == value && type1 == mtype) return true;
+                    if (value1 > value) return true;
+                }
+            }
+            //出的是主色牌
+            if (type == mtype) {   //值是2以下的主牌
+                if (value < 10) {   //主色牌并且要大于value
+                    if (type1 == mtype) {
+                        if (value1 > value) return true;
+                    }
+                    if (value1 > 9) {
+                        return true;
+                    }
+                }
+                //值是2以上的
+                if (value > 9) {
+                    if (value1 > value) return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -212,10 +416,9 @@ public class PokerUtils {
                 return false;
             }
         }
-        if (list.size() == 3) return false;
-        if (list.size() == 4) {
+        if (list.size()%2==0&&list.size()>2) {
 
-            return isOut(list,4);
+            return isOut(list,list.size());
            /* HashSet set = new HashSet();
             HashSet set1=new HashSet();
             for (Poker poker : list) {
@@ -238,7 +441,7 @@ public class PokerUtils {
             }*/
 
         }
-        if (list.size()==6)
+       /* if (list.size()==6)
         {
            return isOut(list,6);
         }
@@ -269,7 +472,7 @@ public class PokerUtils {
         if (list.size()==20)
         {
             return isOut(list,20);
-        }
+        }*/
         return false;
     }
 
@@ -282,22 +485,24 @@ public class PokerUtils {
      */
     public boolean isOut(List<Poker> list,int size)
     {
-        HashSet set = new HashSet();
+        HashSet<Integer> set = new HashSet();
         HashSet set1=new HashSet();
+
         for (Poker poker : list) {
             set.add(poker.getPokerValue());
             set1.add(poker.getPokertype());
-            Log.e("----",poker.getPokertype()+"-----------------------------------");
+           // Log.e("----",poker.getPokertype()+"-----------------------------------");
         }
         if (set.size() == size/2) {
             if (set1.size()>1)return false;
-            Poker [] pokers=new Poker[set1.size()];
+            //Poker [] pokers=new Poker[set.size()];
+            Integer pokers[]=new Integer[set.size()];
             set.toArray(pokers);
-            Poker[] pokers1 = sortingBig(pokers);
+            Integer[] pokers1 = sortBig(pokers);
             boolean f=false;
             for (int i=0;i<pokers1.length-1;i++)
             {
-                if (pokers1[i].getPokerValue()>pokers1[i+1].getPokerValue())
+                if (pokers1[i]>pokers1[i+1])
                 {
                     f=true;
                 }
@@ -308,6 +513,26 @@ public class PokerUtils {
         } else {
             return false;
         }
+    }
+
+    public Integer[] sortBig(Integer [] temp)
+    {
+
+        for (int i=0;i<temp.length;i++)
+        {
+
+            for(int j=0;j<temp.length;j++)
+            {
+                if (temp[i]>temp[j])
+                {  int  a=temp[j];
+                    temp[j]=temp[i];
+                    temp[i]=a;
+                }
+            }
+
+        }
+
+        return temp;
     }
 
     /**

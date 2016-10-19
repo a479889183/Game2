@@ -10,7 +10,7 @@ import org.cocos2d.opengl.CCGLSurfaceView;
 import px.com.game2.Layer.GameLayer;
 
 public class MainActivity extends Activity {
-
+    CCDirector director;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -18,7 +18,7 @@ public class MainActivity extends Activity {
 
         setContentView(surfaceView);
 
-        CCDirector director=CCDirector.sharedDirector();
+         director=CCDirector.sharedDirector();
         //开启线程
         director.attachInView(surfaceView);
         director.setDisplayFPS(true);
@@ -28,5 +28,23 @@ public class MainActivity extends Activity {
         scene.addChild(new GameLayer());
         director.runWithScene(scene);
 
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        director.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        director.onResume();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        director.end();
     }
 }
