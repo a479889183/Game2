@@ -419,60 +419,10 @@ public class PokerUtils {
         if (list.size()%2==0&&list.size()>2) {
 
             return isOut(list,list.size());
-           /* HashSet set = new HashSet();
-            HashSet set1=new HashSet();
-            for (Poker poker : list) {
-                set.add(poker.getPokerValue());
-                set1.add(poker.getPokertype());
-                Log.e("----",poker.getPokertype()+"-----------------------------------");
-            }
-            if (set.size() == 2) {
-                if (set1.size()>1)return false;
-                List<Integer> list1 = new ArrayList<>();
-                list1.addAll(set);
-                if ((list1.get(0) == list1.get(1) + 1) || (list1.get(0) == list1.get(1) - 1)) {
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            } else {
-                return false;
-            }*/
+
 
         }
-       /* if (list.size()==6)
-        {
-           return isOut(list,6);
-        }
-        if (list.size()==8)
-        {
-            return isOut(list,8);
-        }
-        if (list.size()==10)
-        {
-            return isOut(list,10);
-        }
-        if (list.size()==12)
-        {
-            return isOut(list,12);
-        }
-        if (list.size()==14)
-        {
-            return isOut(list,14);
-        }
-        if (list.size()==16)
-        {
-            return isOut(list,16);
-        }
-        if (list.size()==18)
-        {
-            return isOut(list,18);
-        }
-        if (list.size()==20)
-        {
-            return isOut(list,20);
-        }*/
+
         return false;
     }
 
@@ -515,6 +465,11 @@ public class PokerUtils {
         }
     }
 
+    /**
+     * 排序
+     * @param temp
+     * @return
+     */
     public Integer[] sortBig(Integer [] temp)
     {
 
@@ -615,7 +570,7 @@ public class PokerUtils {
      * @return
      */
     public boolean pokerRules(List<Poker> list) {
-        Log.e("-------", "====================daxiao===" + list.size());
+
         boolean isflag = false;
         if (list.size() == 2) {
             if (list.get(0).getPokerValue() != list.get(1).getPokerValue()) {

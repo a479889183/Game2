@@ -17,6 +17,15 @@ public class RobotUtil {
 
 
     /**
+     * 没有大的牌 优先出同花色的牌
+     * @return
+     */
+    public static List<Poker> outPokerB()
+    {
+        return null;
+    }
+
+    /**
      * 出牌 mPoker 自己的牌<br>
      * uPoker 桌面上的牌
      * mtype  什么色为主
