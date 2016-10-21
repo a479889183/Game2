@@ -45,6 +45,8 @@ public class PokerUtils {
      */
     public List<Poker[]> dealcard(int number, Poker[] list, int size)//发牌
     {
+
+
         List<Poker[]> plist = new ArrayList<>();
         for (int j=0;j<number;j++)
         {   Poker [] pokers=new Poker[size];
@@ -128,7 +130,7 @@ public class PokerUtils {
                       wlist.add(pokers[i]);
                   }
                   //红
-                  if (pokers[i].getPokertype()==Poker.POKERTTYPE_R)
+                  if (pokers[i].getPokertype()== POKERTTYPE_R)
                   {
                       rlist.add(pokers[i]);
                   }
@@ -138,7 +140,7 @@ public class PokerUtils {
                       mlist.add(pokers[i]);
                   }
                   //方块
-                  if (pokers[i].getPokertype()==Poker.POKERTTYPE_F)
+                  if (pokers[i].getPokertype()== POKERTTYPE_F)
                   {
                       flist.add(pokers[i]);
                   }
@@ -208,7 +210,7 @@ public class PokerUtils {
 
         }
         //主色为红色
-        else if(type==Poker.POKERTTYPE_R)
+        else if(type== POKERTTYPE_R)
         {
             // 把红色牌追加到牌后面
 
@@ -262,7 +264,7 @@ public class PokerUtils {
                 pk[mplist.size()+mpokers.length+wpokers.length+rpokers.length+i]=fpokers[i];
             }
         }
-        else if (type==Poker.POKERTTYPE_F)
+        else if (type== POKERTTYPE_F)
         {   //把方块加进去
             for (int i=0;i<fpokers.length;i++)
             {
@@ -419,10 +421,7 @@ public class PokerUtils {
         if (list.size()%2==0&&list.size()>2) {
 
             return isOut(list,list.size());
-
-
         }
-
         return false;
     }
 
@@ -441,7 +440,7 @@ public class PokerUtils {
         for (Poker poker : list) {
             set.add(poker.getPokerValue());
             set1.add(poker.getPokertype());
-           // Log.e("----",poker.getPokertype()+"-----------------------------------");
+
         }
         if (set.size() == size/2) {
             if (set1.size()>1)return false;
@@ -498,14 +497,14 @@ public class PokerUtils {
     {
          if (list.size()==2)
          {
-          if (list.get(0).getPokerValue()==10&&(list.get(0).getPokertype()==Poker.POKERTTYPE_R||list.get(0).getPokertype()==Poker.POKERTTYPE_F))
+          if (list.get(0).getPokerValue()==10&&(list.get(0).getPokertype()== POKERTTYPE_R||list.get(0).getPokertype()== POKERTTYPE_F))
           {
               if (list.get(1).getPokerValue()==11)
               {
                   return  true;
               }
           }
-          else if (list.get(1).getPokerValue()==10&&(list.get(1).getPokertype()==Poker.POKERTTYPE_R||list.get(1).getPokertype()==Poker.POKERTTYPE_F))
+          else if (list.get(1).getPokerValue()==10&&(list.get(1).getPokertype()== POKERTTYPE_R||list.get(1).getPokertype()== POKERTTYPE_F))
           {
               if (list.get(0).getPokerValue()==11)
               {
@@ -519,7 +518,7 @@ public class PokerUtils {
 
             for (Poker poker : list) {
                 set.add(poker.getPokerValue());
-                Log.e("----",poker.getPokertype()+"-----------------------------------");
+
             }
 
             if (set.size()==1)
@@ -550,7 +549,7 @@ public class PokerUtils {
                     {
                         if (pokers1[0].getPokertype()==pokers1[1].getPokertype())
                         {
-                            if (pokers1[2].getPokerValue()==10&&(pokers1[2].getPokertype()==POKERTTYPE_R||pokers1[2].getPokertype()==POKERTTYPE_F))
+                            if (pokers1[2].getPokerValue()==10&&(pokers1[2].getPokertype()==Poker.POKERTTYPE_R||pokers1[2].getPokertype()==Poker.POKERTTYPE_F))
                             {
                                 return  true;
                             }

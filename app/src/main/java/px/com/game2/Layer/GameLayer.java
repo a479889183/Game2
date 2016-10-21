@@ -1,5 +1,7 @@
 package px.com.game2.Layer;
 
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.MotionEvent;
 import org.cocos2d.actions.instant.CCCallFunc;
@@ -17,8 +19,7 @@ import px.com.game2.bean.Poker;
 import px.com.game2.utils.CommonUtils;
 import px.com.game2.utils.PokerUtils;
 import px.com.game2.utils.RobotUtil;
-
-import static android.R.attr.label;
+import px.com.game2.utils.ShuffleCards;
 
 
 /**
@@ -35,7 +36,6 @@ public class GameLayer extends BaseLayer {
      * 抬起的点
      */
     public CGPoint upPoint;
-
 
     /**
      * 底牌
@@ -105,11 +105,51 @@ public class GameLayer extends BaseLayer {
     public int spoker=1;
 
 
-
     CCLabel label, playLable,showToast,roblable,buriedLable;
 
 
     PokerUtils pUtils;
+
+
+    public Handler  handler=new Handler()
+    {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            //自己的牌
+            if (msg.what==POKER_M)
+            {
+                Poker poker= (Poker) msg.obj;
+                myGameLayer.addMlist(poker);
+
+                //added by xiaohan below
+                //myGameLayer.initdeal();
+               // myGameLayer.refreshPoker(poker);
+                //added by xiaohan above
+
+                Log.e("handler","----"+poker.getPokerValue());
+
+            }
+            //第一个机器的牌
+            else if(msg.what==POKER_F)
+            {
+                Poker poker= (Poker) msg.obj;
+
+            }
+            //第二个机器的牌
+            else if(msg.what==POKER_S)
+            {
+
+            }
+            //第三个机器的牌
+            else if(msg.what==POKER_T)
+            {
+
+            }
+
+
+        }
+    };
 
 
 
@@ -241,7 +281,11 @@ public class GameLayer extends BaseLayer {
         List<Poker[]> dealcard = pUtils.dealcard(3, list, 17);*/
         //92张牌
         list = CommonUtils.getCardB();
+        //洗牌
         list = pUtils.shufflecard(list);
+
+        new ShuffleCards(list,handler).start();
+
         List<Poker[]> dealcard = pUtils.dealcard(4, list, 21);
         remainPoker.clear();
         //底牌
@@ -250,25 +294,23 @@ public class GameLayer extends BaseLayer {
         }
 
         //把牌发给4个人
-        mList.clear();
+      /*  mList.clear();
         Collections.addAll(mList, pUtils.sort(dealcard.get(0),1));
-        myGameLayer.setMlist(mList);
-
+        myGameLayer.setMlist(mList);*/
 
         secondList.clear();
 
-        Collections.addAll(secondList, pUtils.sortingBig(dealcard.get(1)));
-
+        Collections.addAll(secondList, pUtils.sort(dealcard.get(1),1));
         fristReobot.setList(secondList);
 
         thirdList.clear();
 
-        Collections.addAll(thirdList, pUtils.sortingBig(dealcard.get(2)));
+        Collections.addAll(thirdList, pUtils.sort(dealcard.get(2),1));
         secondRobot.setList(thirdList);
 
         fouthList.clear();
 
-        Collections.addAll(fouthList, pUtils.sortingBig(dealcard.get(3)));
+        Collections.addAll(fouthList, pUtils.sort(dealcard.get(3),1));
 
         thirdRobotLayer.setList(fouthList);
 
@@ -291,7 +333,7 @@ public class GameLayer extends BaseLayer {
      */
     public void deal() {
         addPoker();
-        initdeal();
+        //initdeal();
     }
 
     /**
@@ -301,7 +343,6 @@ public class GameLayer extends BaseLayer {
         myGameLayer.initdeal();
 
     }
-
 
     /**
      * 判断点是否在矩形上
@@ -318,15 +359,13 @@ public class GameLayer extends BaseLayer {
         }
     }
 
-
-
     /**
      * 埋牌
      */
     public void buriedPoker()
     {   remainPoker.clear();
         //底牌=埋的牌
-        remainPoker= myGameLayer.buriedPoker(1);
+        remainPoker= myGameLayer.buriedPoker();
     }
 
 
@@ -346,10 +385,13 @@ public class GameLayer extends BaseLayer {
 
         myGameLayer.exitPoker(otherList,mainPoker);
         List<Poker> pokerList = myGameLayer.getmOutPoker();
-        if (pokerList==null||pokerList.size()==0) return;
-        otherList=pokerList;
-        if (sendPokerPeople==1) {
-            Log.e("---sendPokerPeople:",sendPokerPeople+":-----dijige");
+        if (pokerList!=null||pokerList.size()>0)
+        {   sendPokerPeople=1;
+            otherList=pokerList;
+        }
+        //自己出牌
+        if (spoker==1) {
+
             CCDelayTime delayTime = CCDelayTime.action(2);
             CCCallFunc callFunc = CCCallFunc.action(this, "robotPoker");
             CCSequence sequence = CCSequence.actions(delayTime, callFunc);
@@ -357,7 +399,7 @@ public class GameLayer extends BaseLayer {
         }
         //第一个出牌的人是第2个机器和第3个机器
         else if (spoker==5||spoker==4)
-        {   Log.e("---sendPokerPeople111:",sendPokerPeople+":-----dijige---spoker:"+spoker);
+        {
             CCDelayTime delayTime = CCDelayTime.action(2);
             CCCallFunc callFunc = CCCallFunc.action(this, "robotOut");
             CCSequence sequence = CCSequence.actions(delayTime, callFunc);
@@ -367,11 +409,14 @@ public class GameLayer extends BaseLayer {
         else if(spoker==3)
         {
          if (pokerList!=null&&pokerList.size()>0)
-         {   sendPokerPeople=1;
+         {
+             spoker=1;
+             otherList.clear();
              CCDelayTime delayTime = CCDelayTime.action(2);
              CCCallFunc callFunc = CCCallFunc.action(this, "cleanPoker");
              CCSequence sequence = CCSequence.actions(delayTime, callFunc);
              this.runAction(sequence);
+
          }
          else
          {
@@ -406,7 +451,7 @@ public class GameLayer extends BaseLayer {
 
            /* if (myGameLayer.getmOutPoker().size()>0) otherList=myGameLayer.getmOutPoker();*/
 
-            sendPokerPeople=1;
+
             fristReobot.outPoker(otherList);
             List<Poker> showList = fristReobot.getShowList();
             //第一个人的牌有大的
@@ -415,8 +460,9 @@ public class GameLayer extends BaseLayer {
                 otherList=showList;
 
                 secondRobot.outPoker(otherList);
-                Log.e("robotOut 2","-----");
+
                 List<Poker> showList1 = secondRobot.getShowList();
+                //第三个人的牌大
                 if (showList1!=null&&showList1.size()>0)
                 {
                     sendPokerPeople=3;
@@ -424,7 +470,7 @@ public class GameLayer extends BaseLayer {
                     CCSequence sequence1=CCSequence.actions(CCDelayTime.action(1), CCCallFunc.action(this,"cleanPoker"));
                     this.runAction(sequence1);
 
-                    Log.e("robotOut3","-----");
+
                     CCDelayTime delayTime=CCDelayTime.action(3);
                     CCCallFunc callFunc=CCCallFunc.action(this,"soutPoker");
                     CCSequence sequence=CCSequence.actions(delayTime,callFunc);
@@ -450,6 +496,7 @@ public class GameLayer extends BaseLayer {
             {
                 secondRobot.outPoker(otherList);
                 List<Poker> showList1 = secondRobot.getShowList();
+                //第三个人有大的牌
                 if (showList1!=null&&showList1.size()>0)
                 {
                     sendPokerPeople=3;
@@ -468,7 +515,6 @@ public class GameLayer extends BaseLayer {
                 else
                 {
                     otherList.clear();
-
                     CCSequence sequence1=CCSequence.actions(CCDelayTime.action(1), CCCallFunc.action(this,"cleanPoker"));
                     this.runAction(sequence1);
 
@@ -487,13 +533,15 @@ public class GameLayer extends BaseLayer {
         //出牌的是第三个人
         else if (spoker==4)
         {
-            if ( myGameLayer.getmOutPoker().size()>0) otherList=myGameLayer.getmOutPoker();
+            if ( myGameLayer.getmOutPoker().size()>0)
+            {   sendPokerPeople=1;
+                otherList=myGameLayer.getmOutPoker();
+            }
 
-            sendPokerPeople=1;
             fristReobot.outPoker(otherList);
             List<Poker> showList = fristReobot.getShowList();
-
-            if (showList!=null&&showList.size()>1)
+            //第一个人的牌大
+            if (showList!=null&&showList.size()>0)
             {
                 sendPokerPeople=2;
                 otherList.clear();
@@ -733,7 +781,7 @@ public class GameLayer extends BaseLayer {
      * 清除出的牌
      */
     public void cleanPoker()
-    {
+    {  otherList.clear();
         myGameLayer.removeLastPoker();
         fristReobot.removeShowChild();
         secondRobot.removeShowChild();
@@ -800,7 +848,7 @@ public class GameLayer extends BaseLayer {
     public boolean ccTouchesBegan(MotionEvent event) {
          downPoint = this.convertTouchToNodeSpace(event);
         myGameLayer.downPoint=downPoint;
-        Log.e("按下的点", "---------" + downPoint);
+        myGameLayer.robPokerClick(downPoint,remainPoker);
         if (CGRect.containsPoint(label.getBoundingBox(), downPoint)) {
             removePoker();
         } else if (CGRect.containsPoint(playLable.getBoundingBox(), downPoint)) {
@@ -814,6 +862,7 @@ public class GameLayer extends BaseLayer {
         {
             buriedPoker();
         }
+
         return super.ccTouchesBegan(event);
     }
 

@@ -131,7 +131,9 @@ public class SecondRobot extends BaseLayer {
         }
 
         showList = RobotUtil.outPoker(list, poker, Poker.POKERTTYPE_W);
-
+        Log.e("第二个机器", "showsize:"+showList.size()+"psize:"+psize);
+                //出的牌不一致先清空
+        if(showList.size() != poker.size())showList.clear();
         //如果出的牌数目与桌面上的牌数目不一致直接退出
         if (showList==null||showList.size()==0||showList.size() != poker.size()) {
             //showLable();
@@ -141,6 +143,8 @@ public class SecondRobot extends BaseLayer {
             }
             isBig=false;
         }
+        Log.e("第2个机器", "牌showList="+showList.size());
+
         int first;
         int bsize=showList.size();
         int swith=(int) list.get(0).getPolerSprite().getBoundingBox().size.getWidth();
@@ -160,9 +164,9 @@ public class SecondRobot extends BaseLayer {
             list.remove(showList.get(i));
             if (!isBig)
             {   tList.add(showList.get(i));
-                showList.remove(i);
             }
         }
+        if(!isBig){ showList.clear();}
 
     }
     public void showLable()

@@ -67,6 +67,7 @@ public class FristRobotLayer extends BaseLayer {
      * 自己出牌
      */
     public void OutCard() {
+
         removeShowChild();
         showList.add(list.get(list.size() - 1));
 
@@ -112,25 +113,29 @@ public class FristRobotLayer extends BaseLayer {
         removeShowChild();
 
         showList = RobotUtil.outPoker(list, poker, Poker.POKERTTYPE_W);
+        Log.e("第一个机器", "showsize:"+showList.size()+"psize:"+psize);
+        //出的牌不一致先清空
+        if(showList.size() != poker.size())showList.clear();
         //如果出的牌数目与桌面上的牌数目不一致直接退出
-        if (showList == null || showList.size() == 0 || showList.size() != poker.size()) {
+        if (showList == null || showList.size() == 0 ) {
             //showLable();
+
             for (int i = 0; i < psize; i++) {
                 showList.add(list.get(list.size() - 1 - i));
             }
             isBig = false;
 
         }
-
+        Log.e("第1个机器", "牌showList="+showList.size());
         for (int i = showList.size() - 1; i >= 0; i--) {
             Log.e("第yi个机器", "打的牌" + showList.get(i).getPokerValue() + "----" + showList.get(i).getPokertype());
             show(showList.get(i).getPolerSprite(), (int) winSize.getWidth() - ((30 * i) + 150));
             list.remove(showList.get(i));
             if (!isBig) {
                 tList.add(showList.get(i));
-                showList.remove(i);
             }
         }
+       if(!isBig){ showList.clear();}
 
     }
 

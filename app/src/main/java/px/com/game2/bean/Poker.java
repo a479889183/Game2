@@ -2,12 +2,14 @@ package px.com.game2.bean;
 
 import org.cocos2d.nodes.CCSprite;
 
+import java.io.Serializable;
+
 
 /**
  * Created by admin on 2016/10/12.
  */
 
-public class Poker {
+public class Poker implements Serializable {
     /**
      * 黑桃
      */

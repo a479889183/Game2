@@ -111,24 +111,32 @@ public class ThirdRobotLayer extends BaseLayer {
             showList.clear();
         }
         showList = RobotUtil.outPoker(list, poker, Poker.POKERTTYPE_W);
+        Log.e("第三个机器", "showsize:"+showList.size()+"psize:"+psize);
+       //出的牌不一致先清空
+        if(showList.size() != poker.size())showList.clear();
+        Log.e("第三个机器", "牌showList="+showList.size());
         //如果出的牌数目与桌面上的牌数目不一致直接退出
         if (showList==null||showList.size()==0||showList.size() != poker.size()) {
             //showLable();
             for (int i=0;i<psize;i++)
             {
                 showList.add(list.get(list.size()-1-i));
+                Log.e("第三个机器", "没有大的的牌");
             }
+
             isBig=false;
         }
+        Log.e("第三个机器", "牌showList="+showList.size());
         for (int i =0 ; i <showList.size() ; i++) {
             Log.e("第三个机器", "打的牌" + showList.get(i).getPokerValue() + "----" + showList.get(i).getPokertype());
             show(showList.get(i).getPolerSprite(),((30 * i) + 150));
             list.remove(showList.get(i));
             if (!isBig)
             {   tList.add(showList.get(i));
-                showList.remove(i);
+
             }
         }
+        if(!isBig){ showList.clear();}
 
     }
     public void showLable()
