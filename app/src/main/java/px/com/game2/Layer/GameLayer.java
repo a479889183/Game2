@@ -130,6 +130,7 @@ public class GameLayer extends BaseLayer {
     CCDelayTime delayTime;
 
 
+
     CCLabel label, playLable,showToast,roblable,buriedLable;
 
 
@@ -676,27 +677,7 @@ public class GameLayer extends BaseLayer {
             remainPoker.add(list[i]);
         }
 
-        //把牌发给4个人
-      /*  mList.clear();
-        Collections.addAll(mList, pUtils.sort(dealcard.get(0),1));
-        myGameLayer.setMlist(mList);
 
-        secondList.clear();
-
-        Collections.addAll(secondList, pUtils.sort(dealcard.get(1),1));
-        fristReobot.setList(secondList);
-
-        thirdList.clear();
-
-        Collections.addAll(thirdList, pUtils.sort(dealcard.get(2),1));
-        secondRobot.setList(thirdList);
-
-        fouthList.clear();
-
-        Collections.addAll(fouthList, pUtils.sort(dealcard.get(3),1));
-
-        thirdRobotLayer.setList(fouthList);
-*/
 
 
     }
@@ -767,7 +748,7 @@ public class GameLayer extends BaseLayer {
      * 出牌
      */
     public void exitPoker() {
-
+        myGameLayer.exitPoker(otherList);
     }
 
     /**

@@ -2,7 +2,6 @@ package px.com.game2.Layer;
 
 import android.util.Log;
 import org.cocos2d.actions.instant.CCCallFunc;
-import org.cocos2d.actions.interval.CCDelayTime;
 import org.cocos2d.actions.interval.CCMoveBy;
 import org.cocos2d.actions.interval.CCMoveTo;
 import org.cocos2d.actions.interval.CCSequence;
@@ -17,9 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import px.com.game2.bean.Poker;
 import px.com.game2.utils.PokerUtils;
-
-import static android.R.attr.type;
-
 
 /**
  * Created by admin on 2016/10/19.
@@ -109,6 +105,11 @@ public class MyGameLayer extends  BaseLayer {
      * 亮庄的牌
      */
     public List<Poker> rlist;
+
+    /**
+     * 是否出牌
+     */
+    public boolean isOutPoker;
 
 
 
@@ -337,42 +338,6 @@ public class MyGameLayer extends  BaseLayer {
 
         sprite.runAction(sequence);
     }
-
-    /**
-     * 牌数量发生变化 动画
-     */
-    public void refreshPoker(Poker poker) {
-        if (moveSpriteUp == null) {
-            moveSpriteUp = new ArrayList<>();
-        }
-
-        //初始化放到桌面以为的位置
-        poker.getPolerSprite().setPosition(winSize.width, 30);
-        poker.getPolerSprite().setAnchorPoint(0, 0);
-        poker.getPolerSprite().setVisible(true);
-
-
-        //CCDelayTime ccdelay = CCDelayTime.action(2);
-
-        //robList.clear();
-        //robMlist.clear();
-        //把2加进去
-        if (mList.get(i).getPokerValue() == 10 && (mList.get(i).getPokertype() == Poker.POKERTTYPE_R || mList.get(i).getPokertype() == Poker.POKERTTYPE_F))
-        {
-            robList.add(mList.get(i));
-        }
-        //把10加进去
-        else if (mList.get(i).getPokerValue() == 11)
-        {
-            robMlist.add(mList.get(i));
-        }
-
-        /*initPokerPoint(sprite);
-        CCMoveTo ccMoveBy = CCMoveTo.action(speed, CGPoint.ccp(initX, 30));
-        CCSequence sequence = CCSequence.actions(ccMoveBy, CCCallFunc.action(this, "lodeDeal"));
-        sprite.runAction(sequence);*/
-    }
-
 
     /**
      * 发牌动画
@@ -771,6 +736,7 @@ public class MyGameLayer extends  BaseLayer {
      * 出牌
      */
     public void exitPoker(List<Poker> otherList) {
+        isOutPoker=false;
         if (moveSpriteUp != null && moveSpriteUp.size() > 0) {
 
             HashSet<Poker> pokset = new HashSet<>(moveSpriteUp);
@@ -810,6 +776,7 @@ public class MyGameLayer extends  BaseLayer {
                 moveSpriteUp.clear();
                 return;
             }
+            isOutPoker=true;
             boolean f=true;
             //判断是否大于桌面上的牌
             if (otherList!=null&&otherList.size()>0)
