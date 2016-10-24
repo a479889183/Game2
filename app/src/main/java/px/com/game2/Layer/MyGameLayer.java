@@ -19,7 +19,6 @@ import px.com.game2.bean.Poker;
 import px.com.game2.utils.PokerUtils;
 
 import static android.R.attr.type;
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
 
 
 /**
@@ -99,10 +98,17 @@ public class MyGameLayer extends  BaseLayer {
     public int mPoker=Poker.POKERTTYPE_W;
 
     PokerUtils pokerUtils;
+
+    public boolean isZhuang;
     /**
      * 当前牌的位置
      */
     int index;
+
+    /**
+     * 亮庄的牌
+     */
+    public List<Poker> rlist;
 
 
 
@@ -120,7 +126,21 @@ public class MyGameLayer extends  BaseLayer {
         robMlist=new ArrayList<>();
 
         pokerSet = new HashSet<>();
+        rlist=new ArrayList<>();
+
         initLable();
+    }
+
+    /**
+     * 获得亮庄的牌
+     * @return
+     */
+    public List<Poker> getRlist() {
+        return rlist;
+    }
+
+    public void setRlist(List<Poker> rlist) {
+        this.rlist = rlist;
     }
 
     /**
@@ -142,21 +162,28 @@ public class MyGameLayer extends  BaseLayer {
         Poker[] pokers = mList.toArray(new Poker[mList.size()]);
         Poker[] sort = pokerUtils.sort(pokers, mPoker);
 
-        //Collections.addAll(mList,sort);
+
         mList.clear();
+
         Collections.addAll(mList,sort);
 
        index = getIndex(poker);
 
-       // Log.e("pokes","pokers="+pokers.length+"sort--:"+sort.length+"---"+mList.size()+"--index:"+index);
 
         CCSprite sp = poker.getPolerSprite();
         sp.setPosition(winSize.width, 30);
         sp.setAnchorPoint(0, 0);
         sp.setVisible(false);
-        this.addChild(sp);
+        this.addChild(sp,index);
 
-       /* int zOrder = sp.getZOrder();*/
+        //重新设置 精灵的Z
+        for (int i=0;i<mList.size();i++)
+        {
+
+            this.reorderChild(mList.get(i).getPolerSprite(),i);
+        }
+        int zOrder = sp.getZOrder();
+
        // Log.e("pokes","pokers="+pokers.length+"sort--:"+sort.length+"---"+mList.size()+"--index:"+index+"----zoider:"+zOrder);
 
     }
@@ -181,8 +208,11 @@ public class MyGameLayer extends  BaseLayer {
     /**
      * 改变精灵图层顺序
      */
-    public void  setSpriteZord()
-    {
+    public void  setSpriteZord(CCSprite sprite,int zord)
+    {  if (this.getParent()==null||sprite==null)return;
+        sprite.reorderChild(this,zord);
+
+        int zOrder = sprite.getZOrder();
 
     }
 
@@ -276,11 +306,12 @@ public class MyGameLayer extends  BaseLayer {
      * 动画显示
      */
     public void initdeal() {
+
+
         if (moveSpriteUp == null) {
             moveSpriteUp = new ArrayList<>();
         }
         i = 0;
-        CCDelayTime ccdelay = CCDelayTime.action(2);
         if (mList.size() == 0) return;
 
         CCSprite sprite = mList.get(i).getPolerSprite();
@@ -300,8 +331,10 @@ public class MyGameLayer extends  BaseLayer {
         }
 
         initPokerPoint(sprite);
+
         CCMoveTo ccMoveBy = CCMoveTo.action(speed, CGPoint.ccp(initX, 30));
         CCSequence sequence = CCSequence.actions(ccMoveBy, CCCallFunc.action(this, "lodeDeal"));
+
         sprite.runAction(sequence);
     }
 
@@ -340,9 +373,6 @@ public class MyGameLayer extends  BaseLayer {
         sprite.runAction(sequence);*/
     }
 
-    public void caculatePosition(){
-
-    }
 
     /**
      * 发牌动画
@@ -369,21 +399,8 @@ public class MyGameLayer extends  BaseLayer {
             for (int j=0;j<robMlist.size();j++)
             {
                 int type=robMlist.get(j).getPokertype();
-                switch (type)
-                {
-                    case Poker.POKERTTYPE_W:
-                        wlabel.setColor(ccColor3B.ccRED);
-                        break;
-                    case Poker.POKERTTYPE_R:
-                        rlabel.setColor(ccColor3B.ccRED);
-                        break;
-                    case Poker.POKERTTYPE_M:
-                        mlabel.setColor(ccColor3B.ccRED);
-                        break;
-                    case Poker.POKERTTYPE_F:
-                        flabel.setColor(ccColor3B.ccRED);
-                        break;
-                }
+                if (!isZhuang())
+                setLableColor(type,ccColor3B.ccRED);
             }
 
 
@@ -393,6 +410,7 @@ public class MyGameLayer extends  BaseLayer {
             zlabel.setColor(ccColor3B.ccRED);
         }
         CCSprite sprite = mList.get(i).polerSprite;
+
         sprite.setVisible(true);
         CCMoveTo ccMoveBy = CCMoveTo.action(0.25F, CGPoint.ccp(initX + addX * i, 30));
 
@@ -400,6 +418,45 @@ public class MyGameLayer extends  BaseLayer {
         sprite.runAction(sequence);
         i++;
     }
+
+    /**
+     * 设置标签的颜色
+     * @param type：h花色
+     * @param red：颜色
+     */
+    public void setLableColor(int type,ccColor3B red)
+    {
+        switch (type)
+        {
+            case Poker.POKERTTYPE_W:
+                wlabel.setColor(red);
+                break;
+            case Poker.POKERTTYPE_R:
+                rlabel.setColor(red);
+                break;
+            case Poker.POKERTTYPE_M:
+                mlabel.setColor(red);
+                break;
+            case Poker.POKERTTYPE_F:
+                flabel.setColor(red);
+                break;
+        }
+    }
+
+    /**
+     * 设置默认的颜色为白色
+     */
+    public void setInitColor()
+    {
+        wlabel.setColor(ccColor3B.ccWHITE);
+
+        rlabel.setColor(ccColor3B.ccWHITE);
+
+        mlabel.setColor(ccColor3B.ccWHITE);
+
+        flabel.setColor(ccColor3B.ccWHITE);
+    }
+
     /**
      * 初始化扑克牌的位置
      *
@@ -557,6 +614,57 @@ public class MyGameLayer extends  BaseLayer {
 
     }
 
+    /**
+     * 反庄
+     * @param pokers:亮庄的牌
+     */
+    public void getRobZHuang(List<Poker> pokers)
+    {
+        int type=pokers.get(0).getPokertype();
+        //第一幅
+        List<Poker> pokers1=new ArrayList<>();
+        //第二幅
+        List<Poker> pokers2=new ArrayList<>();
+
+        int pokerColor=0;
+
+        if (robList.size()>1)
+        {
+            for (int i=0;i<robMlist.size();i++)
+            {
+             if (robMlist.get(i).getPokertype()!=type)
+             {
+                 if (robMlist.get(i).getNum()==1)
+                 {
+                     pokers1.add(robMlist.get(i));
+                 }
+                 else if (robMlist.get(i).getNum()==2)
+                 {
+                     pokers2.add(robMlist.get(i));
+                 }
+             }
+            }
+            //查找有没有反庄的牌
+            for (int i=0;i<pokers1.size();i++)
+            {
+                for (int j=0;j<pokers2.size();j++)
+                {
+                 if (pokers1.get(i).getPokertype()==pokers2.get(j).getPokertype())
+                 {
+
+                     pokerColor=pokers1.get(i).getPokertype();
+                     Log.e("pokers","--"+pokerColor);
+                 }
+                }
+            }
+
+            if (pokerColor>0)
+            {
+                setLableColor(pokerColor,ccColor3B.ccRED);
+            }
+        }
+
+    }
 
     /**
      * 清除上次的牌
@@ -571,11 +679,33 @@ public class MyGameLayer extends  BaseLayer {
         }
     }
 
+    /**
+     * 超时出牌
+     */
+    public void TimeoutCards(List<Poker> pokers)
+    {
+        moveSpriteUp.clear();
+
+        for (int i=pokers.size();i>=0;i--)
+        {
+            moveSpriteUp.add(mList.get(mList.size()-1-i));
+        }
+        for (int i=0;i<moveSpriteUp.size();i++)
+        {
+            mList.remove(moveSpriteUp.get(i));
+        }
+        removeLastPoker();
+        pokerSet.add(moveSpriteUp.get(i));
+        exitMoveAnimation(exitX, winSize.height / 2, moveSpriteUp.get(i).getPolerSprite());
+        initdeal();
+    }
 
     /**
-     * 出牌
+     * 自己出牌
      */
-    public void exitPoker(List<Poker> otherList,int type) {
+    public void outCards()
+    {
+
         if (moveSpriteUp != null && moveSpriteUp.size() > 0) {
 
             HashSet<Poker> pokset = new HashSet<>(moveSpriteUp);
@@ -598,7 +728,72 @@ public class MyGameLayer extends  BaseLayer {
             Poker[] pokers = moveSpriteUp.toArray(new Poker[moveSpriteUp.size()]);
 
             //重新排序
-            pokers=pUtils.sort(pokers,type);
+            pokers=pUtils.sort(pokers,mPoker);
+
+            moveSpriteUp.clear();
+
+            Collections.addAll(moveSpriteUp, pokers);
+
+            if (!pUtils.pokerRulesB(moveSpriteUp)) {   //不符合出牌规则 把牌往下移
+
+                for (int i = 0; i < moveSpriteUp.size(); i++) {
+                    CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, -30));
+                    moveSpriteUp.get(i).getPolerSprite().runAction(ccMoveTo);
+                }
+                moveSpriteUp.clear();
+                return;
+            }
+            mOutPoker.clear();
+            //添加自己出的牌
+            mOutPoker.addAll(moveSpriteUp);
+
+            removeLastPoker();
+            for (Poker pk : moveSpriteUp) {
+                removePoker(pk.getPolerSprite());
+                mList.remove((pk));
+            }
+            i = 0;
+
+            pokerSet.add(moveSpriteUp.get(i));
+
+            exitMoveAnimation(exitX, winSize.height / 2, moveSpriteUp.get(i).getPolerSprite());
+            initdeal();
+
+        }
+
+
+
+
+    }
+
+
+    /**
+     * 出牌
+     */
+    public void exitPoker(List<Poker> otherList) {
+        if (moveSpriteUp != null && moveSpriteUp.size() > 0) {
+
+            HashSet<Poker> pokset = new HashSet<>(moveSpriteUp);
+            moveSpriteUp.clear();
+            moveSpriteUp.addAll(pokset);
+
+            //计算显示的位置
+            int length = moveSpriteUp.size();
+            int width = (int) moveSpriteUp.get(0).getPolerSprite().getBoundingBox().size.getWidth();
+            int sSize = 0;
+            if (length / 2 != 0) {
+                sSize = (length / 2) + 1;
+            } else {
+                sSize = length / 2;
+            }
+            exitX = width + width + ((width / 3) * (length - 2));
+            exitX = (winSize.width / 2) - exitX / 2;
+
+
+            Poker[] pokers = moveSpriteUp.toArray(new Poker[moveSpriteUp.size()]);
+
+            //重新排序
+            pokers=pUtils.sort(pokers,mPoker);
 
             moveSpriteUp.clear();
 
@@ -606,7 +801,7 @@ public class MyGameLayer extends  BaseLayer {
 
 
 
-            if (!pUtils.pokerRulesB(moveSpriteUp)) {   //不符合出牌规则 把牌往下移
+            if (moveSpriteUp.size()!=otherList.size()) {   //出的牌与桌面上的牌 把牌往下移
 
                 for (int i = 0; i < moveSpriteUp.size(); i++) {
                     CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, -30));
@@ -620,16 +815,6 @@ public class MyGameLayer extends  BaseLayer {
             if (otherList!=null&&otherList.size()>0)
             {
                 f =pUtils.isSize(moveSpriteUp,otherList,mPoker);
-
-                /*if (!f)
-                {
-                    for (int i = 0; i < moveSpriteUp.size(); i++) {
-                        CCMoveBy ccMoveTo = CCMoveBy.action(0.25f, ccp(0, -30));
-                        moveSpriteUp.get(i).getPolerSprite().runAction(ccMoveTo);
-                    }
-                    moveSpriteUp.clear();
-
-                }*/
             }
             if (f)
             {
@@ -639,8 +824,8 @@ public class MyGameLayer extends  BaseLayer {
                 mOutPoker.addAll(moveSpriteUp);
             }
 
-
             removeLastPoker();
+
             for (Poker pk : moveSpriteUp) {
                 removePoker(pk.getPolerSprite());
                 mList.remove((pk));
@@ -650,7 +835,6 @@ public class MyGameLayer extends  BaseLayer {
             exitMoveAnimation(exitX, winSize.height / 2, moveSpriteUp.get(i).getPolerSprite());
             speed = 0.001F;
             initdeal();
-
         }
     }
     /**
@@ -834,5 +1018,13 @@ public class MyGameLayer extends  BaseLayer {
             initdeal();
         }
       return  mpk;
+    }
+
+    public boolean isZhuang() {
+        return isZhuang;
+    }
+
+    public void setZhuang(boolean zhuang) {
+        isZhuang = zhuang;
     }
 }

@@ -7,16 +7,11 @@ import org.cocos2d.actions.interval.CCDelayTime;
 import org.cocos2d.actions.interval.CCSequence;
 import org.cocos2d.nodes.CCLabel;
 import org.cocos2d.nodes.CCSprite;
-
+import org.cocos2d.types.ccColor3B;
 import java.util.ArrayList;
 import java.util.List;
-
 import px.com.game2.bean.Poker;
 import px.com.game2.utils.RobotUtil;
-
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
-
-
 /**
  * Created by admin on 2016/10/17.
  */
@@ -41,15 +36,37 @@ public class FristRobotLayer extends BaseLayer {
 
     public boolean isBig = true;
 
+    /**
+     * 存红色的2
+     */
+    public List<Poker> robList;
+    /**
+     * 存10
+     */
+    public List<Poker> robMlist;
+
+
+    public boolean isZhuang=false;
+
+    /**
+     * 抢庄的牌
+     */
+    public List<Poker> rlist;
+
 
     public FristRobotLayer() {
 
         list = new ArrayList<>();
         tList = new ArrayList<>();
         showList = new ArrayList<>();
-        label = CCLabel.makeLabel("要不起", "hkbd.ttf", 24);
+        robList=new ArrayList<>();
+        robMlist=new ArrayList<>();
+        rlist=new ArrayList<>();
+
+        label = CCLabel.makeLabel("黑", "hkbd.ttf", 24);
         label.setAnchorPoint(0, 0);
-        label.setPosition(winSize.width - 150, winSize.height / 2);
+        label.setColor(ccColor3B.ccRED);
+        label.setPosition(winSize.width - 150, winSize.height / 2+40);
         label.setVisible(false);
         this.addChild(label);
 
@@ -172,6 +189,88 @@ public class FristRobotLayer extends BaseLayer {
      */
     public void setList(List<Poker> list) {
         this.list = list;
+    }
+
+
+    /**
+     * 是否是庄
+     * @return
+     */
+    public boolean isZhuang() {
+        return isZhuang;
+    }
+
+    /**
+     * 设置能否抢庄
+     * @param zhuang
+     */
+    public void setZhuang(boolean zhuang) {
+        isZhuang = zhuang;
+    }
+
+    /**
+     * 获取抢庄的牌
+     * @return
+     */
+    public List<Poker> getRlist() {
+        return rlist;
+    }
+
+
+    /**
+     * 添加扑克
+     * @param poker
+     */
+    public void addPoker(Poker poker)
+    {
+        if (poker.getPokerValue()==10&&(poker.getPokertype()==2||poker.getPokertype()==4))
+        {
+            robList.add(poker);
+        }
+        else if (poker.getPokerValue()==11)
+        {
+            robMlist.add(poker);
+        }
+        list.add(poker);
+
+        if (robList.size()>0)
+        {   if (isZhuang)
+            {
+                return;
+            }
+            for (int j=0;j<robMlist.size();j++)
+            {
+                int type=robMlist.get(j).getPokertype();
+                label.setVisible(true);
+                switch (type)
+                {
+                    case Poker.POKERTTYPE_W:
+                        rlist.add(robMlist.get(j));
+                        label.setString("黑");
+                        break;
+                    case Poker.POKERTTYPE_R:
+                        rlist.add(robMlist.get(j));
+                        label.setString("红");
+                        break;
+                    case Poker.POKERTTYPE_M:
+                        rlist.add(robMlist.get(j));
+                        label.setString("梅");
+                        break;
+                    case Poker.POKERTTYPE_F:
+                        rlist.add(robMlist.get(j));
+                        label.setString("方");
+                        break;
+                }
+                isZhuang=true;
+            }
+
+
+        }
+
+
+
+
+
     }
 
     /**

@@ -12,7 +12,6 @@ import org.cocos2d.nodes.CCSprite;
 import org.cocos2d.types.CGPoint;
 import org.cocos2d.types.CGRect;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import px.com.game2.bean.Poker;
@@ -20,6 +19,7 @@ import px.com.game2.utils.CommonUtils;
 import px.com.game2.utils.PokerUtils;
 import px.com.game2.utils.RobotUtil;
 import px.com.game2.utils.ShuffleCards;
+
 
 
 /**
@@ -85,11 +85,16 @@ public class GameLayer extends BaseLayer {
     public List<Poker> fouthList=new ArrayList<>();
 
     /**
-     * 对手出的牌
+     * 出的牌
      */
     public List<Poker> otherList=new ArrayList<>();
 
     public RobotUtil rbUtil;
+
+    /**
+     * 亮庄的牌
+     */
+    public List<Poker> rlist=new ArrayList<>();
     /**
      * 第几个人出牌
      *
@@ -102,7 +107,27 @@ public class GameLayer extends BaseLayer {
      */
     public int mainPoker=1;
 
+
     public int spoker=1;
+
+    /**
+     * 设置机器能否抢庄
+     */
+    public boolean isZhuang;
+
+
+    /**
+     * 出牌的人
+     */
+    public int oPeople=0;
+    /**
+     * 那个人的牌大
+     */
+    public int sizePeople=0;
+    /**
+     * 睡眠
+     */
+    CCDelayTime delayTime;
 
 
     CCLabel label, playLable,showToast,roblable,buriedLable;
@@ -116,6 +141,9 @@ public class GameLayer extends BaseLayer {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            getAllZhuang();
+            //如果有人抢庄 判断自己又没有反庄的牌
+            getRobZhuang();
             //自己的牌
             if (msg.what==POKER_M)
             {
@@ -123,30 +151,32 @@ public class GameLayer extends BaseLayer {
                 myGameLayer.addMlist(poker);
 
                 //added by xiaohan below
-                //myGameLayer.initdeal();
-               // myGameLayer.refreshPoker(poker);
-                //added by xiaohan above
-
-                Log.e("handler","----"+poker.getPokerValue());
+                myGameLayer.initdeal();
 
             }
             //第一个机器的牌
             else if(msg.what==POKER_F)
             {
                 Poker poker= (Poker) msg.obj;
-
+                fristReobot.addPoker(poker);
             }
             //第二个机器的牌
             else if(msg.what==POKER_S)
             {
-
+                Poker poker= (Poker) msg.obj;
+                secondRobot.addPoker(poker);
             }
             //第三个机器的牌
             else if(msg.what==POKER_T)
             {
+                Poker poker= (Poker) msg.obj;
+                thirdRobotLayer.addPoker(poker);
 
+                if (thirdRobotLayer.getList().size()==21)
+                {
+                    firstOutPoker();
+                }
             }
-
 
         }
     };
@@ -158,7 +188,9 @@ public class GameLayer extends BaseLayer {
         this.setIsTouchEnabled(true);
     }
 
+
     private void init() {
+        delayTime=CCDelayTime.action(3);
         pUtils = new PokerUtils();
         rbUtil=new RobotUtil();
         fristReobot=new FristRobotLayer();
@@ -171,20 +203,371 @@ public class GameLayer extends BaseLayer {
 
     }
 
+    //获取抢庄状态
+    public void getAllZhuang()
+    {
+        if (isZhuang==true)return;
+        if (fristReobot.isZhuang())
+        {   rlist=fristReobot.getRlist();
+            oPeople=1;
+            setAllZhuang(true);
+            isZhuang=true;
+        }
+        else if(secondRobot.isZhuang())
+        {   rlist=secondRobot.getRlist();
+            oPeople=2;
+            setAllZhuang(true);
+            isZhuang=true;
+        }
+        else if (thirdRobotLayer.isZhuang())
+        {   rlist=secondRobot.getRlist();
+            oPeople=3;
+            setAllZhuang(true);
+            isZhuang=true;
+        }
+    }
+
     /**
-     * 出牌
+     * 设置能否抢庄
      */
-    private void outPoker() {
+    public void setAllZhuang(boolean isZhuang)
+    {
+        myGameLayer.setZhuang(isZhuang);
+
+        fristReobot.setZhuang(isZhuang);
+
+        secondRobot.setZhuang(isZhuang);
+
+        thirdRobotLayer.setZhuang(isZhuang);
+    }
+
+    /**
+     * 反庄
+     */
+    public void getRobZhuang()
+    {   //庄是自己  直接拿底牌
+        if (oPeople==0)
+        {
+
+        }
+        //庄不是自己
+        else
+        {
+         myGameLayer.setInitColor();
+            if (rlist.size()>0)
+         myGameLayer.getRobZHuang(rlist);
+        }
+    }
+
+    /**
+     * 牌发完后等待5秒 有没有人反庄 没人庄 庄出牌
+     */
+    public void  firstOutPoker()
+    {
+       CCDelayTime delayTime=CCDelayTime.action(5);
+
+       CCSequence sequence=CCSequence.actions(delayTime,CCCallFunc.action(this,"forPoker"));
+
+       this.runAction(sequence);
+
+    }
+
+    /**
+     * 执行打牌程序
+     */
+    public void forPoker()
+    {   // 牌全部出完了 跳出
+        if (myGameLayer.getMlist().size()==0)
+        {
+            return;
+        }
+        cleanPoker();
+
+        firstPoker();
+
+    }
+
+    /**
+     * 等待5秒后出牌
+     */
+    public void firstPoker()
+    {
+       if (oPeople==0)
+       {
+           myGameLayer.outCards();
+           otherList=myGameLayer.getmOutPoker();
+           oPeople=1;
+           sizePeople=0;
+
+           //3秒后执行第二次出牌
+
+
+           CCSequence sequence=CCSequence.actions(delayTime,CCCallFunc.action(this,"secondPoker"));
+
+           this.runAction(sequence);
+           return;
+       }
+       else if (oPeople==1)
+       {
+        fristReobot.OutCard();
+        otherList=fristReobot.getShowList();
+           oPeople=2;
+           sizePeople=1;
+           //3秒后执行第二次出牌
+
+
+           CCSequence sequence=CCSequence.actions(delayTime,CCCallFunc.action(this,"secondPoker"));
+
+           this.runAction(sequence);
+           return;
+       }
+       else  if (oPeople==2)
+       {
+           secondRobot.OutCard();
+           otherList=secondRobot.getShowList();
+           oPeople=3;
+           sizePeople=2;
+
+           //3秒后执行第二次出牌
+
+
+           CCSequence sequence=CCSequence.actions(delayTime,CCCallFunc.action(this,"secondPoker"));
+
+           this.runAction(sequence);
+           return;
+       }
+       else if (oPeople==3)
+       {
+           thirdRobotLayer.OutCard();
+           otherList=thirdRobotLayer.getShowList();
+           oPeople=0;
+           sizePeople=3;
+
+           //3秒后执行第二次出牌
+
+
+           CCSequence sequence=CCSequence.actions(delayTime,CCCallFunc.action(this,"secondPoker"));
+
+           this.runAction(sequence);
+           return;
+       }
+
+    }
+
+    /**
+     * 第二次出牌
+     */
+    public void  secondPoker()
+    {
+          if (oPeople==0)
+          {
+              myGameLayer.exitPoker(otherList);
+              if (myGameLayer.getmOutPoker()!=null&&myGameLayer.getmOutPoker().size()>0)
+              {
+                  otherList=myGameLayer.getmOutPoker();
+                  sizePeople=0;
+              }
+              oPeople=1;
+
+              //3秒后执行第四次出牌
+
+              CCSequence sequence2=CCSequence.actions(delayTime,CCCallFunc.action(this,"thirdPoker"));
+
+              this.runAction(sequence2);
+              return;
+          }
+          else if (oPeople==1)
+          {
+              fristReobot.outPoker(otherList);
+              if (fristReobot.getShowList()!=null&&fristReobot.getShowList().size()>0)
+              {
+                  otherList=fristReobot.getShowList();
+                  sizePeople=1;
+              }
+              oPeople=2;
+
+              //3秒后执行第四次出牌
+
+              CCSequence sequence2=CCSequence.actions(delayTime,CCCallFunc.action(this,"thirdPoker"));
+
+              this.runAction(sequence2);
+              return;
+          }
+          else if(oPeople==2)
+          {
+              secondRobot.outPoker(otherList);
+              if (secondRobot.getShowList()!=null&&secondRobot.getShowList().size()>0)
+              {
+                  otherList=secondRobot.getShowList();
+                  sizePeople=2;
+              }
+              oPeople=3;
+
+              //3秒后执行第四次出牌
+
+              CCSequence sequence2=CCSequence.actions(delayTime,CCCallFunc.action(this,"thirdPoker"));
+
+              this.runAction(sequence2);
+              return;
+          }
+          else if (oPeople==3)
+          {
+              thirdRobotLayer.outPoker(otherList);
+              if (thirdRobotLayer.getShowList()!=null&&thirdRobotLayer.getShowList().size()>0)
+              {
+                  otherList=thirdRobotLayer.getShowList();
+                  sizePeople=3;
+              }
+              oPeople=0;
+              //3秒后执行第四次出牌
+
+              CCSequence sequence2=CCSequence.actions(delayTime,CCCallFunc.action(this,"thirdPoker"));
+
+              this.runAction(sequence2);
+              return;
+          }
+    }
+
+    /**
+     * 第三次出牌
+     */
+    public void thirdPoker()
+    {
+        if (oPeople==0)
+        {
+            myGameLayer.exitPoker(otherList);
+            if (myGameLayer.getmOutPoker()!=null&&myGameLayer.getmOutPoker().size()>0)
+            {
+                otherList=myGameLayer.getmOutPoker();
+                sizePeople=0;
+            }
+            oPeople=1;
+            //3秒后执行第4次出牌
+            CCSequence sequence2=CCSequence.actions(delayTime,CCCallFunc.action(this,"fouthPoker"));
+            this.runAction(sequence2);
+            return;
+        }
+        else if (oPeople==1)
+        {
+            fristReobot.outPoker(otherList);
+            if (fristReobot.getShowList()!=null&&fristReobot.getShowList().size()>0)
+            {
+                otherList=fristReobot.getShowList();
+                sizePeople=1;
+            }
+            oPeople=2;
+            //3秒后执行第4次出牌
+            CCSequence sequence2=CCSequence.actions(delayTime,CCCallFunc.action(this,"fouthPoker"));
+            this.runAction(sequence2);
+            return;
+        }
+        else if(oPeople==2)
+        {
+            secondRobot.outPoker(otherList);
+            if (secondRobot.getShowList()!=null&&secondRobot.getShowList().size()>0)
+            {
+                otherList=secondRobot.getShowList();
+                sizePeople=2;
+            }
+            oPeople=3;
+            //3秒后执行第4次出牌
+            CCSequence sequence2=CCSequence.actions(delayTime,CCCallFunc.action(this,"fouthPoker"));
+            this.runAction(sequence2);
+            return;
+        }
+        else if (oPeople==3)
+        {
+            thirdRobotLayer.outPoker(otherList);
+            if (thirdRobotLayer.getShowList()!=null&&thirdRobotLayer.getShowList().size()>0)
+            {
+                otherList=thirdRobotLayer.getShowList();
+                sizePeople=3;
+            }
+            oPeople=0;
+            //3秒后执行第4次出牌
+            CCSequence sequence2=CCSequence.actions(delayTime,CCCallFunc.action(this,"fouthPoker"));
+            this.runAction(sequence2);
+            return;
+        }
+    }
+
+
+    /**
+     * 第四次出牌
+     */
+  public void fouthPoker()
+  {
+      if (oPeople==0)
+      {
+           //停留15秒出牌
+          this.runAction(CCDelayTime.action(15));
+          //myGameLayer.exitPoker(otherList);
+          if (myGameLayer.getmOutPoker()!=null&&myGameLayer.getmOutPoker().size()>0)
+          {
+              otherList=myGameLayer.getmOutPoker();
+              oPeople=0;
+          }
+         else{oPeople=sizePeople;}
+
+          //第一轮出牌结束 3秒后执行第二轮
+          CCSequence sequence3=CCSequence.actions(delayTime,CCCallFunc.action(this,"forPoker"));
+          this.runAction(sequence3);
+          return;
+      }
+      else if (oPeople==1)
+      {
+          fristReobot.outPoker(otherList);
+          if (fristReobot.getShowList()!=null&&fristReobot.getShowList().size()>0)
+          {
+              otherList=fristReobot.getShowList();
+              oPeople=1;
+          }
+          else{oPeople=sizePeople;}
+          //第一轮出牌结束 3秒后执行第二轮
+          CCSequence sequence3=CCSequence.actions(delayTime,CCCallFunc.action(this,"forPoker"));
+
+          this.runAction(sequence3);
+          return;
+      }
+      else if(oPeople==2)
+      {
+          secondRobot.outPoker(otherList);
+          if (secondRobot.getShowList()!=null&&secondRobot.getShowList().size()>0)
+          {
+              otherList=secondRobot.getShowList();
+              oPeople=2;
+          }
+          else{oPeople=sizePeople;}
+          //第一轮出牌结束 3秒后执行第二轮
+          CCSequence sequence3=CCSequence.actions(delayTime,CCCallFunc.action(this,"forPoker"));
+
+          this.runAction(sequence3);
+          return;
+      }
+      else if (oPeople==3)
+      {
+          thirdRobotLayer.outPoker(otherList);
+          if (thirdRobotLayer.getShowList()!=null&&thirdRobotLayer.getShowList().size()>0)
+          {
+              otherList=thirdRobotLayer.getShowList();
+              oPeople=3;
+          }
+          else{oPeople=sizePeople;}
+          //第一轮出牌结束 3秒后执行第二轮
+          CCSequence sequence3=CCSequence.actions(delayTime,CCCallFunc.action(this,"forPoker"));
+          this.runAction(sequence3);
+          return;
+      }
+  }
+    /**
+     * 初始化lable 标签
+     */
+    public void SendPoker() {
+
         playLable = CCLabel.makeLabel("出牌", "hkbd.ttf", 24);
         playLable.setColor(ccc3(50, 0, 255));
         playLable.setPosition(winSize.width / 2, winSize.height / 2 - 50);
         this.addChild(playLable);
-    }
-
-    /**
-     * 发牌
-     */
-    public void SendPoker() {
 
         playLable = CCLabel.makeLabel("出牌", "hkbd.ttf", 24);
         playLable.setColor(ccc3(50, 0, 255));
@@ -242,7 +625,6 @@ public class GameLayer extends BaseLayer {
         this.addChild(thirdRobotLayer);
         this.addChild(myGameLayer);
         SendPoker();
-        outPoker();
 
         CCSprite second = CCSprite.sprite("head/4.png");
         second.setPosition(40, winSize.height / 2);
@@ -279,6 +661,7 @@ public class GameLayer extends BaseLayer {
         /*list = CommonUtils.getCard();
         list = pUtils.shufflecard(list);
         List<Poker[]> dealcard = pUtils.dealcard(3, list, 17);*/
+
         //92张牌
         list = CommonUtils.getCardB();
         //洗牌
@@ -296,7 +679,7 @@ public class GameLayer extends BaseLayer {
         //把牌发给4个人
       /*  mList.clear();
         Collections.addAll(mList, pUtils.sort(dealcard.get(0),1));
-        myGameLayer.setMlist(mList);*/
+        myGameLayer.setMlist(mList);
 
         secondList.clear();
 
@@ -313,7 +696,7 @@ public class GameLayer extends BaseLayer {
         Collections.addAll(fouthList, pUtils.sort(dealcard.get(3),1));
 
         thirdRobotLayer.setList(fouthList);
-
+*/
 
 
     }
@@ -332,6 +715,8 @@ public class GameLayer extends BaseLayer {
      * 初始化发牌
      */
     public void deal() {
+        myGameLayer.removepoker();
+        myGameLayer.mList.clear();
         addPoker();
         //initdeal();
     }
@@ -383,398 +768,6 @@ public class GameLayer extends BaseLayer {
      */
     public void exitPoker() {
 
-        myGameLayer.exitPoker(otherList,mainPoker);
-        List<Poker> pokerList = myGameLayer.getmOutPoker();
-        if (pokerList!=null||pokerList.size()>0)
-        {   sendPokerPeople=1;
-            otherList=pokerList;
-        }
-        //自己出牌
-        if (spoker==1) {
-
-            CCDelayTime delayTime = CCDelayTime.action(2);
-            CCCallFunc callFunc = CCCallFunc.action(this, "robotPoker");
-            CCSequence sequence = CCSequence.actions(delayTime, callFunc);
-            this.runAction(sequence);
-        }
-        //第一个出牌的人是第2个机器和第3个机器
-        else if (spoker==5||spoker==4)
-        {
-            CCDelayTime delayTime = CCDelayTime.action(2);
-            CCCallFunc callFunc = CCCallFunc.action(this, "robotOut");
-            CCSequence sequence = CCSequence.actions(delayTime, callFunc);
-            this.runAction(sequence);
-        }
-        //第一个出牌的人是第1个机器
-        else if(spoker==3)
-        {
-         if (pokerList!=null&&pokerList.size()>0)
-         {
-             spoker=1;
-             otherList.clear();
-             CCDelayTime delayTime = CCDelayTime.action(2);
-             CCCallFunc callFunc = CCCallFunc.action(this, "cleanPoker");
-             CCSequence sequence = CCSequence.actions(delayTime, callFunc);
-             this.runAction(sequence);
-
-         }
-         else
-         {
-             spoker=sendPokerPeople;
-             CCDelayTime delayTime = CCDelayTime.action(1);
-             CCCallFunc callFunc = CCCallFunc.action(this, "cleanPoker");
-             CCSequence sequence = CCSequence.actions(delayTime, callFunc);
-             this.runAction(sequence);
-
-             //回调出牌的机器
-             otherList.clear();
-             CCDelayTime delayTime1=CCDelayTime.action(2);
-             CCCallFunc callFunc1=CCCallFunc.action(this,"soutPoker");
-             CCSequence sequence1=CCSequence.actions(delayTime1,callFunc1);
-             this.runAction(sequence);
-
-
-         }
-        }
-
-    }
-
-
-
-    /**
-     * 出牌
-     */
-    public  void  robotOut()
-    {   //出牌的是第4个人
-        if (spoker==5)
-        {
-
-           /* if (myGameLayer.getmOutPoker().size()>0) otherList=myGameLayer.getmOutPoker();*/
-
-
-            fristReobot.outPoker(otherList);
-            List<Poker> showList = fristReobot.getShowList();
-            //第一个人的牌有大的
-            if (showList!=null&&showList.size()>0)
-            {   sendPokerPeople=2;
-                otherList=showList;
-
-                secondRobot.outPoker(otherList);
-
-                List<Poker> showList1 = secondRobot.getShowList();
-                //第三个人的牌大
-                if (showList1!=null&&showList1.size()>0)
-                {
-                    sendPokerPeople=3;
-                    otherList.clear();
-                    CCSequence sequence1=CCSequence.actions(CCDelayTime.action(1), CCCallFunc.action(this,"cleanPoker"));
-                    this.runAction(sequence1);
-
-
-                    CCDelayTime delayTime=CCDelayTime.action(3);
-                    CCCallFunc callFunc=CCCallFunc.action(this,"soutPoker");
-                    CCSequence sequence=CCSequence.actions(delayTime,callFunc);
-                    this.runAction(sequence);
-
-                }
-                else
-                {   CCSequence sequence1=CCSequence.actions(CCDelayTime.action(1), CCCallFunc.action(this,"cleanPoker"));
-                    this.runAction(sequence1);
-
-                    otherList.clear();
-                    CCDelayTime delayTime=CCDelayTime.action(3);
-                    CCCallFunc callFunc=CCCallFunc.action(this,"soutPoker");
-                    CCSequence sequence=CCSequence.actions(delayTime,callFunc);
-                    this.runAction(sequence);
-
-
-                }
-
-            }
-            //第一个人没有大的
-            else
-            {
-                secondRobot.outPoker(otherList);
-                List<Poker> showList1 = secondRobot.getShowList();
-                //第三个人有大的牌
-                if (showList1!=null&&showList1.size()>0)
-                {
-                    sendPokerPeople=3;
-                    otherList.clear();
-                    CCSequence sequence1=CCSequence.actions(CCDelayTime.action(1), CCCallFunc.action(this,"cleanPoker"));
-                    this.runAction(sequence1);
-
-                    CCDelayTime delayTime=CCDelayTime.action(3);
-                    CCCallFunc callFunc=CCCallFunc.action(this,"soutPoker");
-                    CCSequence sequence=CCSequence.actions(delayTime,callFunc);
-                    this.runAction(sequence);
-
-
-
-                }
-                else
-                {
-                    otherList.clear();
-                    CCSequence sequence1=CCSequence.actions(CCDelayTime.action(1), CCCallFunc.action(this,"cleanPoker"));
-                    this.runAction(sequence1);
-
-                    CCDelayTime delayTime=CCDelayTime.action(1);
-                    CCCallFunc callFunc=CCCallFunc.action(this,"soutPoker");
-                    CCSequence sequence=CCSequence.actions(delayTime,callFunc);
-                    this.runAction(sequence);
-
-
-                }
-            }
-
-        }
-
-
-        //出牌的是第三个人
-        else if (spoker==4)
-        {
-            if ( myGameLayer.getmOutPoker().size()>0)
-            {   sendPokerPeople=1;
-                otherList=myGameLayer.getmOutPoker();
-            }
-
-            fristReobot.outPoker(otherList);
-            List<Poker> showList = fristReobot.getShowList();
-            //第一个人的牌大
-            if (showList!=null&&showList.size()>0)
-            {
-                sendPokerPeople=2;
-                otherList.clear();
-
-                CCDelayTime delayTime=CCDelayTime.action(2);
-                CCCallFunc callFunc=CCCallFunc.action(this,"soutPoker");
-                CCSequence sequence=CCSequence.actions(delayTime,callFunc);
-                this.runAction(sequence);
-
-                CCSequence sequence1=CCSequence.actions(CCDelayTime.action(1), CCCallFunc.action(this,"cleanPoker"));
-                this.runAction(sequence1);
-            }
-            else
-            {
-                otherList.clear();
-                CCDelayTime delayTime=CCDelayTime.action(2);
-                CCCallFunc callFunc=CCCallFunc.action(this,"soutPoker");
-                CCSequence sequence=CCSequence.actions(delayTime,callFunc);
-                this.runAction(sequence);
-
-                CCSequence sequence1=CCSequence.actions(CCDelayTime.action(1), CCCallFunc.action(this,"cleanPoker"));
-                this.runAction(sequence1);
-            }
-
-        }
-
-
-
-    }
-
-    /***
-     * 回调出牌方法
-     */
-    public void  soutPoker()
-    {
-        spoker=sendPokerPeople;
-       /* Log.e("ss","---soutPoket"+spoker);*/
-        robotOutPoker();
-    }
-
-    /**
-     * 其他人出牌
-     */
-    public void robotPoker()
-    {
-         //Log.e("daxiao",myGameLayer.getmOutPoker().size()+"-----");
-        sendPokerPeople=1;
-        fristReobot.outPoker(myGameLayer.getmOutPoker());
-
-        List<Poker> showList = fristReobot.getShowList();
-       // Log.e("showList",showList.size()+"-----"+showList.get(0).getPokerValue());
-
-        //第一个人有大的牌
-        if (showList!=null&&showList.size()>0)
-        {
-            otherList=showList;
-            secondRobot.outPoker(otherList);
-            sendPokerPeople=2;
-            List<Poker> showList1 = secondRobot.getShowList();
-           //第二个人 有大的牌
-            if (showList1!=null&&showList1.size()>0)
-            {
-                otherList=showList1;
-                sendPokerPeople=3;
-                thirdRobotLayer.outPoker(otherList);
-
-                List<Poker> showList2 = thirdRobotLayer.getShowList();
-                //第三个人 有大的牌
-                if (showList2!=null&&showList2.size()>0)
-                {
-                    otherList=showList2;
-                    sendPokerPeople=4;
-                }
-
-
-            }
-            //第二个人没有大的牌
-            else
-            {
-                thirdRobotLayer.outPoker(otherList);
-
-                List<Poker> showList2 = thirdRobotLayer.getShowList();
-                 //第三个人有大的牌
-                if (showList2!=null&&showList2.size()>0)
-                {
-                    otherList.clear();
-                    sendPokerPeople=4;
-                }
-
-            }
-
-
-        }
-        else
-        {
-            secondRobot.outPoker(myGameLayer.getmOutPoker());
-
-            List<Poker> showList1 = secondRobot.getShowList();
-            //第二个人 有大的牌
-            if (showList1!=null&&showList1.size()>0)
-            {   sendPokerPeople=3;
-                otherList=showList1;
-                thirdRobotLayer.outPoker(otherList);
-
-                List<Poker> showList2 = thirdRobotLayer.getShowList();
-                //第三个人 有大的牌
-                if (showList2!=null&&showList2.size()>0)
-                {
-                    otherList.clear();
-                    sendPokerPeople=4;
-
-                }
-
-
-            }
-            //第二个人没有大的牌
-            else
-            {
-                thirdRobotLayer.outPoker(otherList);
-
-                List<Poker> showList2 = thirdRobotLayer.getShowList();
-                //第三个人有大的牌
-                if (showList2!=null&&showList2.size()>0)
-                {
-                    otherList.clear();
-                    sendPokerPeople=4;
-                }
-            }
-
-        }
-
-        Log.e("第几个人",sendPokerPeople+"----");
-
-        CCDelayTime delayTime=CCDelayTime.action(2);
-        otherList.clear();
-        CCCallFunc callFunc=CCCallFunc.action(this,"robotOutPoker");
-        CCSequence sequence=CCSequence.actions(delayTime,callFunc);
-        this.runAction(sequence);
-
-
-        CCSequence sequence1=CCSequence.actions(CCDelayTime.action(1), CCCallFunc.action(this,"cleanPoker"));
-        this.runAction(sequence1);
-
-        spoker=sendPokerPeople;
-    }
-
-    /**
-     * 回调机器出牌函数
-     */
-    public void  rPoker()
-    {   //第4个人出牌
-        if (spoker==4)
-        {
-            //
-            thirdRobotLayer.outPoker(otherList);
-
-            List<Poker> showList = thirdRobotLayer.getShowList();
-
-            if (showList!=null&&showList.size()>0)
-            {   sendPokerPeople=4;
-                otherList=showList;
-            }
-        }
-
-        else if (spoker==3)
-        {
-            secondRobot.outPoker(otherList);
-
-            List<Poker> showList = secondRobot.getShowList();
-            //第2个机器有大的牌
-            if (showList!=null&&showList.size()>0)
-           {   sendPokerPeople=3;
-                otherList=showList;
-               //第三个机器出牌
-                thirdRobotLayer.outPoker(otherList);
-
-               List<Poker> showList1=thirdRobotLayer.getShowList();
-
-               if (showList1!=null&&showList1.size()>0)
-               {
-                   otherList=showList1;
-                   sendPokerPeople=4;
-               }
-
-           }
-        }
-    }
-
-    /**
-     * 自己出牌
-     */
-    public void  robotOutPoker()
-    {
-       /* Log.e("spoker4","-----so:"+spoker);*/
-        if (spoker==2)
-        {
-            fristReobot.OutCard();
-            otherList=fristReobot.getShowList();
-            sendPokerPeople=2;
-            spoker=3;
-
-            //回调
-            CCDelayTime delayTime=CCDelayTime.action(1);
-            CCCallFunc callFunc=CCCallFunc.action(this,"rPoker");
-            CCSequence sequence=CCSequence.actions(delayTime,callFunc);
-            this.runAction(sequence);
-            return;
-        }
-
-        else if (spoker==3)
-        {
-            secondRobot.OutCard();
-            //Log.e("spoker3","-----so:"+spoker);
-            otherList= secondRobot.getShowList();
-            sendPokerPeople=3;
-            spoker=4;
-
-            //回调
-            CCDelayTime delayTime=CCDelayTime.action(1);
-            CCCallFunc callFunc=CCCallFunc.action(this,"rPoker");
-            CCSequence sequence=CCSequence.actions(delayTime,callFunc);
-            this.runAction(sequence);
-            return;
-        }
-
-        else if (spoker==4)
-        {   //Log.e("spoker4","-----so4:"+spoker);
-            spoker=5;
-            sendPokerPeople=4;
-            thirdRobotLayer.OutCard();
-            otherList=thirdRobotLayer.getShowList();
-            return;
-        }
     }
 
     /**
